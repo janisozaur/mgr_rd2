@@ -4,6 +4,8 @@
 #include <QSemaphore>
 #include <fcntl.h>
 #include <QSocketNotifier>
+#include <QMutex>
+#include <QMutexLocker>
 
 #include <QDebug>
 
@@ -13,9 +15,11 @@ CommunicationsThread::CommunicationsThread(QObject *parent) :
 	mSerialPort(nullptr),
 #else
 	mSerialPortFD(-1),
-	mSN(nullptr),
+	mReadSN(NULL),
+	mWriteSN(NULL),
 #endif
-	mBytesInFlight(0)
+	mBytesInFlight(0),
+	mSemaphore(1)
 {
 	qDebug() << "hello from CT";
 	connect(this, SIGNAL(started()), this, SLOT(initSerial()));
@@ -28,10 +32,15 @@ CommunicationsThread::~CommunicationsThread()
 #else
 	if (mSerialPortFD != -1)
 	{
-		if (mSN != nullptr)
+		if (mReadSN != nullptr)
 		{
-			mSN->setEnabled(false);
-			delete mSN;
+			mReadSN->setEnabled(false);
+			delete mReadSN;
+		}
+		if (mWriteSN != nullptr)
+		{
+			mWriteSN->setEnabled(false);
+			delete mWriteSN;
 		}
 		close(mSerialPortFD);
 	}
@@ -45,6 +54,11 @@ void CommunicationsThread::serialConsumedBytes(qint64 bytes)
 	//qDebug() << "serial consumed bytes, left:" << mBytesInFlight;
 }
 
+void CommunicationsThread::writtenFD(int /*fd*/)
+{
+	mSemaphore.release();
+}
+
 void CommunicationsThread::run()
 {
 	qDebug() << __func__ << "start";
@@ -54,6 +68,8 @@ void CommunicationsThread::run()
 
 void CommunicationsThread::write(QString command)
 {
+	QMutexLocker locker(&mSerialMutex);
+	Q_UNUSED(locker);
 	//qDebug() << __func__ << "start";
 	//qDebug() << "write thread:" << QThread::currentThreadId();
 #ifdef QSERIAL
@@ -63,15 +79,17 @@ void CommunicationsThread::write(QString command)
 #endif
 	const qint64 length = command.length();
 	qint64 writtenCount;
+	QString errorString;
 #ifdef QSERIAL
 	writtenCount = mSerialPort->write(command.toStdString().c_str(), length);
 #else
+	mSemaphore.acquire();
 	writtenCount = ::write(mSerialPortFD, command.toStdString().c_str(), command.size());
+	errorString = QString("%1: %2").arg(QString::number(errno), QString(strerror(errno)));
 #endif
 	mBytesInFlight += writtenCount;
 	bool flushed = true;
 	bool written = true;
-	QString errorString;
 #ifdef QSERIAL
 	flushed = mSerialPort->flush();
 	written = mSerialPort->waitForBytesWritten(50);
@@ -98,7 +116,14 @@ void CommunicationsThread::emitPackets(QByteArray fresh)
 		int start = 0;
 		int end;
 		while ((end = mBuffer.indexOf(SEP, start)) != -1) {
-			emit transferPacket(QByteArray::fromBase64(mBuffer.mid(start, end - start)));
+			QByteArray packet(mBuffer.mid(start, end - start));
+			if (packet.size() > 0)
+			{
+				QByteArray decoded(QByteArray::fromBase64(packet));
+				qDebug() << "new packet:" << packet;
+				qDebug() << "new packet:" << decoded.toHex();
+				emit transferPacket(QByteArray::fromBase64(packet));
+			}
 			start = end + 1;
 		}
 		mBuffer = mBuffer.mid(start);
@@ -108,6 +133,8 @@ void CommunicationsThread::emitPackets(QByteArray fresh)
 #ifdef QSERIAL
 void CommunicationsThread::receiveData()
 {
+	QMutexLocker locker(&mSerialMutex);
+	Q_UNUSED(locker);
 	qDebug() << __func__;
 	QByteArray fresh;
 	Q_CHECK_PTR(mSerialPort);
@@ -137,6 +164,8 @@ void CommunicationsThread::setSerial(QSerialPortInfo info)
 
 void CommunicationsThread::initSerial()
 {
+	QMutexLocker locker(&mSerialMutex);
+	Q_UNUSED(locker);
 	//delete mSerialPort;
 	qDebug() << "Name        : " << mSPI.portName();
 	qDebug() << "Description : " << mSPI.description();
@@ -175,15 +204,20 @@ void CommunicationsThread::initSerial()
 	connect(mSerialPort, SIGNAL(readyRead()), this, SLOT(receiveData()));
 	connect(mSerialPort, SIGNAL(bytesWritten(qint64)), this, SLOT(serialConsumedBytes(qint64)));
 #else
-	mSN = new QSocketNotifier(mSerialPortFD, QSocketNotifier::Read, this);
-	connect(mSN, SIGNAL(activated(int)), this, SLOT(readFD(int)));
-	mSN->setEnabled(true);
+	mReadSN = new QSocketNotifier(mSerialPortFD, QSocketNotifier::Read, this);
+	mWriteSN = new QSocketNotifier(mSerialPortFD, QSocketNotifier::Write, this);
+	connect(mReadSN, SIGNAL(activated(int)), this, SLOT(readFD(int)));
+	connect(mWriteSN, SIGNAL(activated(int)), this, SLOT(writtendFD(int)));
+	mReadSN->setEnabled(true);
+	mWriteSN->setEnabled(true);
 #endif
 }
 
 #ifndef QSERIAL
 void CommunicationsThread::readFD(int fd)
 {
+	QMutexLocker locker(&mSerialMutex);
+	Q_UNUSED(locker);
 	qDebug() << __func__;
 	QByteArray fresh;
 	char *buffer = new char[1024];

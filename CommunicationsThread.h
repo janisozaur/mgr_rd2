@@ -3,6 +3,7 @@
 
 #include <QThread>
 #include <QSerialPortInfo>
+#include <QMutex>
 #include <QSemaphore>
 
 class QSerialPort;
@@ -32,6 +33,7 @@ public slots:
 private slots:
 	void initSerial();
 	void serialConsumedBytes(qint64 bytes);
+	void writtenFD(int fd);
 
 protected:
 	virtual void run();
@@ -41,11 +43,14 @@ private:
 	QSerialPort *mSerialPort;
 #else
 	int mSerialPortFD;
-	QSocketNotifier *mSN;
+	QSocketNotifier *mReadSN;
+	QSocketNotifier *mWriteSN;
 #endif
 	QByteArray mBuffer;
 	QSerialPortInfo mSPI;
 	quint64 mBytesInFlight;
+	QMutex mSerialMutex;
+	QSemaphore mSemaphore;
 };
 
 #endif // COMMUNICATIONSTHREAD_H

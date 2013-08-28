@@ -91,12 +91,13 @@ void RayDisplayWindow::pollSender(const int senderId)
 		QString rformat("e%1\rr\r");
 		QString rcommand(rformat.arg(QString::number(i)));
 		emit serialWrite(rcommand);
+		QThread::yieldCurrentThread();
 	}
 }
 
 void RayDisplayWindow::receivePacket(QByteArray packet)
 {
-	qDebug() << __func__ << packet;
+	qDebug() << __func__ << "apcket size:" << packet.size();
 	//Q_ASSERT(packet.size() > 0);
 	if (packet.size() <= 0)
 	{

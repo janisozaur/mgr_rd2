@@ -2,11 +2,11 @@
 #define RAYDISPLAYWINDOW_H
 
 #include <QMainWindow>
+#include <qextserialport.h>
 
 class RayDisplayScene;
 class QTimer;
 class QSerialPort;
-class CommunicationsThread;
 
 namespace Ui {
 class RayDisplayWindow;
@@ -25,17 +25,21 @@ private slots:
 	void pollNextSender();
 	void receivePacket(QByteArray packet);
 	void error(QString errormsg);
+	void onDataAvailable();
 
 signals:
 	void serialWrite(QString command);
+	void packetAvailable(QByteArray packet);
 
 private:
 	void pollSender(const int senderId);
+	void emitPackets(const QByteArray fresh);
 	Ui::RayDisplayWindow *ui;
-	CommunicationsThread *mCT;
+	QextSerialPort mSerial;
 	RayDisplayScene *mRDS;
 	QTimer *mTimer;
 	int mSenderId;
+	QByteArray mBuffer;
 };
 
 #endif // RAYDISPLAYWINDOW_H

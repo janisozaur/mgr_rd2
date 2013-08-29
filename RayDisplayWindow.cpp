@@ -1,19 +1,19 @@
 #include "RayDisplayWindow.h"
 #include "ui_RayDisplayWindow.h"
 #include "RayDisplayScene.h"
-#include "CommunicationsThread.h"
+#include "CommunicationThread.h"
 
 #include <QtSerialPort/QSerialPort>
 #include <QtSerialPort/QSerialPortInfo>
 #include <QDebug>
 #include <QTimer>
+#include <QMessageBox>
 
 #include <QDebug>
 
 RayDisplayWindow::RayDisplayWindow(QWidget *parent) :
 	QMainWindow(parent),
 	ui(new Ui::RayDisplayWindow),
-	mCT(nullptr),
 	mRDS(nullptr),
 	mTimer(nullptr),
 	mSenderId(0)
@@ -23,8 +23,6 @@ RayDisplayWindow::RayDisplayWindow(QWidget *parent) :
 
 RayDisplayWindow::~RayDisplayWindow()
 {
-	mCT->quit();
-	delete mCT;
 	delete ui;
 	delete mRDS;
 	delete mTimer;
@@ -37,37 +35,67 @@ void RayDisplayWindow::on_pushButton_clicked()
 	mRDS = new RayDisplayScene(this);
 	ui->graphicsView->setScene(mRDS);
 	mRDS->initLeds();
-	QList<QSerialPortInfo> ports;
-	//ports << QSerialPortInfo::availablePorts();
-	ports << QSerialPortInfo(ui->lineEdit->text());
-	foreach (const QSerialPortInfo &info, ports) {
-		qDebug() << "Name        : " << info.portName();
-		qDebug() << "Description : " << info.description();
-		qDebug() << "Manufacturer: " << info.manufacturer();
 
-		if (nullptr != mCT)
-		{
-			mCT->exit();
-			bool clean = mCT->wait(1000);
-			if (!clean)
-			{
-				mCT->terminate();
-				qDebug() << "Had to terminate communication thread";
-			}
-		}
-		delete mCT;
-		mCT = new CommunicationsThread(this);
-		mCT->setSerial(info);
-		mCT->start();
-		qDebug() << "***** CT running:" << mCT->isRunning();
-		connect(mCT, SIGNAL(transferPacket(QByteArray)), this, SLOT(receivePacket(QByteArray)));
-		connect(mCT, SIGNAL(error(QString)), this, SLOT(error(QString)));
-		connect(this, SIGNAL(serialWrite(QString)), mCT, SLOT(write(QString)));
+	mSerial.setPortName("/dev/ttyACM0");
+	mSerial.setBaudRate(BAUD115200);
+	mSerial.setDataBits(DATA_8);
+	mSerial.setParity(PAR_NONE);
+	mSerial.setStopBits(STOP_1);
+	mSerial.setFlowControl(FLOW_OFF);
+	mSerial.setTimeout(100);
+	qDebug() << "connecting to " << mSerial.portName();
+	bool opened = mSerial.open(QIODevice::ReadWrite);
+	if (!opened) {
+		QMessageBox::critical(this, "error", QString("error opening serial port ") + mSerial.errorString());
 	}
+	mSerial.readAll();
+
 	mTimer = new QTimer(this);
 	connect(mTimer, SIGNAL(timeout()), this, SLOT(pollNextSender()));
+	connect(&mSerial, SIGNAL(readyRead()), this, SLOT(onDataAvailable()));
+	connect(this, SIGNAL(packetAvailable(QByteArray)), this, SLOT(receivePacket(QByteArray)));
 	mTimer->setInterval(1000);
 	mTimer->start();
+}
+
+void RayDisplayWindow::onDataAvailable()
+{
+	qDebug() << __func__;
+	Q_ASSERT(mSerial.isOpen());
+	Q_ASSERT(mSerial.isReadable());
+	QString errorString;
+	const qint64 toRead = mSerial.bytesAvailable();
+	Q_ASSERT(toRead > 0);
+	char *buffer = new char[toRead];
+	const qint64 readCount = mSerial.read(buffer, toRead);
+	if (readCount != toRead)
+	{
+		errorString = mSerial.errorString();
+		emit error(QString("Failed to read %1 bytes from serial. read returned %2. Error: %3").arg(
+								   QString::number(toRead), QString::number(readCount),
+								   errorString));
+	}
+	QByteArray fresh(buffer, readCount);
+	delete [] buffer;
+	emitPackets(fresh);
+}
+
+#define SEP '\r'
+
+void RayDisplayWindow::emitPackets(const QByteArray fresh)
+{
+	qDebug() << __func__;
+	mBuffer += fresh;
+	if (fresh.contains(SEP))
+	{
+		int start = 0;
+		int end;
+		while ((end = mBuffer.indexOf(SEP, start)) != -1) {
+			emit packetAvailable(QByteArray::fromBase64(mBuffer.mid(start, end - start)));
+			start = end + 1;
+		}
+		mBuffer = mBuffer.mid(start);
+	}
 }
 
 void RayDisplayWindow::pollNextSender()
@@ -82,7 +110,8 @@ void RayDisplayWindow::pollSender(const int senderId)
 	//qDebug() << "main thread:" << QThread::currentThreadId();
 	QString format("a%1\r");
 	QString command(format.arg(QString::number(senderId)));
-	emit serialWrite(command);
+	//emit serialWrite(command);
+	mSerial.write(command.toUtf8());
 	for (int i = 0; i < 20; i++) {
 		if (senderId == i)
 		{
@@ -90,7 +119,8 @@ void RayDisplayWindow::pollSender(const int senderId)
 		}
 		QString rformat("e%1\rr\r");
 		QString rcommand(rformat.arg(QString::number(i)));
-		emit serialWrite(rcommand);
+		//emit serialWrite(rcommand);
+		mSerial.write(rcommand.toUtf8());
 	}
 }
 

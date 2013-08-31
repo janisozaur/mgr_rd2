@@ -7,6 +7,7 @@
 class RayDisplayScene;
 class QTimer;
 class QSerialPort;
+class CommunicationThread;
 
 namespace Ui {
 class RayDisplayWindow;
@@ -20,26 +21,24 @@ public:
 	explicit RayDisplayWindow(QWidget *parent = 0);
 	~RayDisplayWindow();
 	
+	void cleanCT();
 private slots:
 	void on_pushButton_clicked();
 	void pollNextSender();
 	void receivePacket(QByteArray packet);
 	void error(QString errormsg);
-	void onDataAvailable();
 
 signals:
 	void serialWrite(QString command);
 	void packetAvailable(QByteArray packet);
+	void pollSender(const int senderId);
 
 private:
-	void pollSender(const int senderId);
-	void emitPackets(const QByteArray fresh);
 	Ui::RayDisplayWindow *ui;
-	QextSerialPort mSerial;
 	RayDisplayScene *mRDS;
 	QTimer *mTimer;
 	int mSenderId;
-	QByteArray mBuffer;
+	CommunicationThread *mCT;
 };
 
 #endif // RAYDISPLAYWINDOW_H

@@ -16,13 +16,29 @@ RayDisplayWindow::RayDisplayWindow(QWidget *parent) :
 	ui(new Ui::RayDisplayWindow),
 	mRDS(nullptr),
 	mTimer(nullptr),
-	mSenderId(0)
+	mSenderId(0),
+	mCT(nullptr)
 {
 	ui->setupUi(this);
 }
 
+void RayDisplayWindow::cleanCT()
+{
+	if (nullptr != mCT)
+	{
+		if (mCT->isRunning()) {
+			mCT->finish();
+			if (!mCT->wait(1000)) {
+				mCT->terminate();
+			}
+		}
+		delete mCT;
+	}
+}
+
 RayDisplayWindow::~RayDisplayWindow()
 {
+	cleanCT();
 	delete ui;
 	delete mRDS;
 	delete mTimer;
@@ -36,97 +52,60 @@ void RayDisplayWindow::on_pushButton_clicked()
 	ui->graphicsView->setScene(mRDS);
 	mRDS->initLeds();
 
-	mSerial.setPortName("/dev/ttyACM0");
-	mSerial.setBaudRate(BAUD115200);
-	mSerial.setDataBits(DATA_8);
-	mSerial.setParity(PAR_NONE);
-	mSerial.setStopBits(STOP_1);
-	mSerial.setFlowControl(FLOW_OFF);
-	mSerial.setTimeout(100);
-	qDebug() << "connecting to " << mSerial.portName();
-	bool opened = mSerial.open(QIODevice::ReadWrite);
-	if (!opened) {
-		QMessageBox::critical(this, "error", QString("error opening serial port ") + mSerial.errorString());
-	}
-	mSerial.readAll();
+	cleanCT();
+	mCT = new CommunicationThread(this);
+	connect(mCT, SIGNAL(packetAvailable(QByteArray)), this, SLOT(receivePacket(QByteArray)));
+	connect(this, SIGNAL(pollSender(int)), mCT, SLOT(putModuleId(int)));
+	mCT->start();
 
 	mTimer = new QTimer(this);
 	connect(mTimer, SIGNAL(timeout()), this, SLOT(pollNextSender()));
-	connect(&mSerial, SIGNAL(readyRead()), this, SLOT(onDataAvailable()));
 	connect(this, SIGNAL(packetAvailable(QByteArray)), this, SLOT(receivePacket(QByteArray)));
 	mTimer->setInterval(1000);
 	mTimer->start();
 }
 
-void RayDisplayWindow::onDataAvailable()
-{
-	qDebug() << __func__;
-	Q_ASSERT(mSerial.isOpen());
-	Q_ASSERT(mSerial.isReadable());
-	QString errorString;
-	const qint64 toRead = mSerial.bytesAvailable();
-	Q_ASSERT(toRead > 0);
-	char *buffer = new char[toRead];
-	const qint64 readCount = mSerial.read(buffer, toRead);
-	if (readCount != toRead)
-	{
-		errorString = mSerial.errorString();
-		emit error(QString("Failed to read %1 bytes from serial. read returned %2. Error: %3").arg(
-								   QString::number(toRead), QString::number(readCount),
-								   errorString));
-	}
-	QByteArray fresh(buffer, readCount);
-	delete [] buffer;
-	emitPackets(fresh);
-}
-
-#define SEP '\r'
-
-void RayDisplayWindow::emitPackets(const QByteArray fresh)
-{
-	qDebug() << __func__;
-	mBuffer += fresh;
-	if (fresh.contains(SEP))
-	{
-		int start = 0;
-		int end;
-		while ((end = mBuffer.indexOf(SEP, start)) != -1) {
-			emit packetAvailable(QByteArray::fromBase64(mBuffer.mid(start, end - start)));
-			start = end + 1;
-		}
-		mBuffer = mBuffer.mid(start);
-	}
-}
-
 void RayDisplayWindow::pollNextSender()
 {
 	qDebug() << "polling module" << mSenderId;
-	pollSender(mSenderId++);
+	emit pollSender(mSenderId++);
 	mSenderId = mSenderId % 20;
 }
 
-void RayDisplayWindow::pollSender(const int senderId)
+/*void RayDisplayWindow::pollSender(const int senderId)
 {
 	//qDebug() << "main thread:" << QThread::currentThreadId();
 	QString format("a%1\r");
-	QString command(format.arg(QString::number(senderId)));
+	QString command(format.arg(QString::number(senderId).rightJustified(2, '0')));
 	//emit serialWrite(command);
 	mSerial.write(command.toUtf8());
+	qDebug() << __func__ << " thread:" << QThread::currentThreadId();
 	for (int i = 0; i < 20; i++) {
 		if (senderId == i)
 		{
 			continue;
 		}
-		QString rformat("e%1\rr\r");
-		QString rcommand(rformat.arg(QString::number(i)));
+		QString rformat("e%1\r");
+		QString rcommand(rformat.arg(QString::number(i).rightJustified(2, '0')));
+		qDebug() << "rcommand" << rcommand << ", " << rcommand.toUtf8().toHex();
 		//emit serialWrite(rcommand);
-		mSerial.write(rcommand.toUtf8());
+		qint64 written = mSerial.write(rcommand.toUtf8().constData(), rcommand.size());
+		mSerial.flush();
+		if (written != rcommand.size())
+		{
+			qDebug() << "HERE BE DRAGONS ##########################";
+		}
+		QString readCommand("r\r");
+		mSerial.write(readCommand.toUtf8());
+		mSerial.flush();
+		QThread::usleep(10);
 	}
-}
+}*/
 
 void RayDisplayWindow::receivePacket(QByteArray packet)
 {
-	qDebug() << __func__ << packet;
+	//qDebug() << __func__ << packet;
+	//qDebug() << "got new packet, size = " << packet.size();
 	//Q_ASSERT(packet.size() > 0);
 	if (packet.size() <= 0)
 	{

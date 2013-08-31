@@ -379,7 +379,7 @@ void RayDisplayScene::lightenSender(const int senderId, const QVector<QBitArray>
 	}
 }
 
-void RayDisplayScene::lightenSender(const int senderId, const QVector<QBitArray> &detectors, const QVector<QBitArray> &calibration, const bool clear)
+void RayDisplayScene::lightenSender(const int senderId, const QVector<QBitArray> &, const QVector<QBitArray> &, const bool )
 {
 	Q_ASSERT(senderId >= 0);
 	Q_ASSERT(senderId < mSenders.size());

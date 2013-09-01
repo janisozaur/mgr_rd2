@@ -13,6 +13,7 @@ class CommunicationThread : public QThread
     Q_OBJECT
 public:
     explicit CommunicationThread(QObject *parent = 0);
+    QByteArray readBytes(const int howMany);
 
 signals:
     void packetAvailable(QByteArray packet);
@@ -33,6 +34,7 @@ private:
     QSemaphore mWriteSemaphore;
     QVector<int> mModuleIDs;
     QMutex mModulesMutex;
+    char mCharBuffer[1024];
 };
 
 #endif // COMMUNICATIONTHREAD_H

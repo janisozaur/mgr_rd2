@@ -47,6 +47,21 @@ void CommunicationThread::emitPackets(const QByteArray fresh)
 	}
 }
 
+QByteArray CommunicationThread::readBytes(const int howMany)
+{
+	QByteArray data;
+	while (data.size() < howMany && !mAskedToFinish)
+	{
+		qint64 readCount = mSerial->read(mCharBuffer, 1024);
+		if (readCount < 0) {
+			qDebug() << "error:" << mSerial->lastError() << mSerial->errorString();
+		} else {
+			data += QByteArray(mCharBuffer, readCount);
+		}
+	}
+	return data;
+}
+
 void CommunicationThread::run()
 {
 	mSerial->setPortName("/dev/ttyACM0");
@@ -62,7 +77,6 @@ void CommunicationThread::run()
 	Q_ASSERT(opened);
 	QString senderFormat("a%1\r");
 	QString recFormat("e%1\r");
-	char buffer[1024];
 	while (!mAskedToFinish)
 	{
 		qDebug() << "waiting";
@@ -83,16 +97,7 @@ void CommunicationThread::run()
 			mSerial->write(QString("r\r").toLocal8Bit());
 			mSerial->flush();
 			//QThread::yieldCurrentThread();
-			QByteArray data = mSerial->readAll();
-			while (data.size() < 9 && !mAskedToFinish)
-			{
-				qint64 readCount = mSerial->read(buffer, 1024);
-				if (readCount < 0) {
-					qDebug() << "error:" << mSerial->lastError() << mSerial->errorString();
-				} else {
-					data += QByteArray(buffer, readCount);
-				}
-			}
+			QByteArray data = readBytes(9);
 			//qDebug() << "data:" << data;
 			emitPackets(data);
 		}

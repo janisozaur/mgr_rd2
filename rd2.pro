@@ -30,3 +30,6 @@ HEADERS  += RayDisplayWindow.h \
     CommunicationThread.h
 
 FORMS    += RayDisplayWindow.ui
+
+RESOURCES += \
+    resources.qrc

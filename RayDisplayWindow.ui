@@ -86,7 +86,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>../calibration.json</string>
+     <string>:/res/calibration.json</string>
     </property>
    </widget>
   </widget>

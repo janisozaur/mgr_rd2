@@ -8,6 +8,10 @@
 #include <QDebug>
 #include <QTimer>
 #include <QMessageBox>
+#include <QFile>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
 
 #include <QDebug>
 
@@ -102,6 +106,76 @@ void RayDisplayWindow::pollNextSender()
 	}
 }*/
 
+void RayDisplayWindow::readCalibration(QString filename)
+{
+    QFile file(filename);
+    bool opened = file.open(QIODevice::ReadOnly | QIODevice::Text);
+    qDebug() << "calibration opened:" << opened;
+    QString c = file.readAll();
+    QJsonDocument calibJson = QJsonDocument::fromJson(c.toUtf8());
+    qDebug() << "isnull" << calibJson.isNull();
+    Q_ASSERT(calibJson.isObject());
+    QJsonObject calibObj = calibJson.object();
+    QJsonValue calibData = calibObj.value("calibration");
+    Q_ASSERT(calibData.isArray());
+    QJsonArray calibArray = calibData.toArray();
+    int sendersCount = calibArray.size();
+    mCalibration.reserve(sendersCount);
+    for (int i = 0; i < sendersCount; i++)
+    {
+        QJsonObject sender = calibArray.at(i).toObject();
+        QStringList key = sender.keys();
+        Q_ASSERT(key.size() == 1);
+        bool ok;
+        int senderId = key.at(0).toInt(&ok, 0);
+        if (!ok)
+        {
+            qDebug() << "failed to convert key to int:" << key.at(0) <<
+                        "in object:" << sender;
+        }
+        Q_ASSERT(ok);
+        if (senderId + 1 > mCalibration.size())
+        {
+            mCalibration.resize(senderId + 1);
+        }
+        QJsonArray recArray = sender.value(key.at(0)).toArray();
+        int recCount = recArray.size();
+        mCalibration[senderId].reserve(recCount);
+        for (int j = 0; j < recCount; j++)
+        {
+            QJsonObject receiver = recArray.at(j).toObject();
+            QStringList recKey = receiver.keys();
+            Q_ASSERT(recKey.size() == 1);
+            int recId = recKey.at(0).toInt(&ok, 0);
+            if (!ok)
+            {
+                qDebug() << "failed to convert key to int:" << recKey.at(0) <<
+                            "in object:" << receiver;
+            }
+            Q_ASSERT(ok);
+            QString recVal = receiver.value(recKey.at(0)).toString();
+            Q_ASSERT(!recVal.isNull());
+            uint recBits = recVal.toUInt(&ok, 0);
+            if (!ok)
+            {
+                qDebug() << "failed to convert value to int:" << recVal <<
+                            "in object:" << receiver;
+            }
+            Q_ASSERT(ok);
+            Q_ASSERT(recBits == qBound(uint(0), recBits, uint(255)));
+            QBitArray ba(8);
+            for (int k = 0; k < 8; k++)
+            {
+                if (recBits & (1 << k))
+                {
+                    ba.setBit(k);
+                }
+            }
+            mCalibration[senderId].insert(recId, ba);
+        }
+    }
+}
+
 void RayDisplayWindow::receivePacket(QByteArray packet)
 {
 	//qDebug() << __func__ << packet;
@@ -166,4 +240,9 @@ void RayDisplayWindow::error(QString errormsg)
 {
 	qDebug() << errormsg;
 	ui->statusBar->showMessage(errormsg);
+}
+
+void RayDisplayWindow::on_pushButton_2_clicked()
+{
+	readCalibration(ui->lineEdit_2->text());
 }

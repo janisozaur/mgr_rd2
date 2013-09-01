@@ -73,10 +73,11 @@ void CommunicationThread::run()
 	mSerial->setFlowControl(FLOW_OFF);
 	mSerial->setTimeout(100);
 	mSerial->setQueryMode(QextSerialPort::Polling);
-	bool opened = mSerial->open(QIODevice::ReadWrite);
+	const bool opened = mSerial->open(QIODevice::ReadWrite);
 	Q_ASSERT(opened);
-	QString senderFormat("a%1\r");
-	QString recFormat("e%1\r");
+	const QString senderFormat("a%1\r");
+	const QString recFormat("e%1\r");
+	const QByteArray readCommand(QString("r\r").toLocal8Bit());
 	while (!mAskedToFinish)
 	{
 		qDebug() << "waiting";
@@ -86,18 +87,23 @@ void CommunicationThread::run()
 		{
 			break;
 		}
-		int sender = getModuleID();
+		const int sender = getModuleID();
 		qDebug() << "polling" << sender;
 		mSerial->write(senderFormat.arg(QString::number(sender).rightJustified(2, '0')).toLocal8Bit());
-		for (int i = 0; i < 20 && !mAskedToFinish; i++)
+		const QHash<int, QBitArray> senderCal = mCalibrationData.at(sender);
+		const QList<int> receiversCal = senderCal.keys();
+		for (int i = 0; i < senderCal.size(); i++)
+		//for (int i = 0; i < 20 && !mAskedToFinish; i++)
 		{
-			mSerial->write(recFormat.arg((QString::number(i)).rightJustified(2, '0')).toLocal8Bit());
+			const int receiver = receiversCal.at(i);
+			const QString recStr = QString::number(receiver);
+			mSerial->write(recFormat.arg(recStr.rightJustified(2, '0')).toLocal8Bit());
 			mSerial->flush();
 			usleep(100);
-			mSerial->write(QString("r\r").toLocal8Bit());
+			mSerial->write(readCommand);
 			mSerial->flush();
 			//QThread::yieldCurrentThread();
-			QByteArray data = readBytes(9);
+			const QByteArray data = readBytes(9);
 			//qDebug() << "data:" << data;
 			emitPackets(data);
 		}
@@ -120,4 +126,9 @@ int CommunicationThread::getModuleID()
 	Q_UNUSED(l);
 	Q_ASSERT(mModuleIDs.size() > 0);
 	return mModuleIDs.takeFirst();
+}
+
+void CommunicationThread::setCalibration(Calibration cal)
+{
+	mCalibrationData = cal;
 }

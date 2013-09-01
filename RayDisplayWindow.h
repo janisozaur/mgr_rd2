@@ -27,6 +27,7 @@ public:
 	~RayDisplayWindow();
 	
 	void cleanCT();
+	void initCT();
 private slots:
 	void on_pushButton_clicked();
 	void pollNextSender();

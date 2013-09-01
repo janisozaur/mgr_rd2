@@ -5,6 +5,7 @@
 #include <QSemaphore>
 #include <QMutex>
 #include <QVector>
+#include <RayDisplayWindow.h>
 
 class QextSerialPort;
 
@@ -21,6 +22,7 @@ signals:
 public slots:
     void finish();
     void putModuleId(int id);
+    void setCalibration(Calibration cal);
 
 protected:
     virtual void run();
@@ -35,6 +37,7 @@ private:
     QVector<int> mModuleIDs;
     QMutex mModulesMutex;
     char mCharBuffer[1024];
+    Calibration mCalibrationData;
 };
 
 #endif // COMMUNICATIONTHREAD_H

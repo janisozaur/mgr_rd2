@@ -48,6 +48,14 @@ RayDisplayWindow::~RayDisplayWindow()
 	delete mTimer;
 }
 
+void RayDisplayWindow::initCT()
+{
+	mCT = new CommunicationThread(this);
+	mCT->setCalibration(mCalibration);
+	connect(mCT, SIGNAL(packetAvailable(QByteArray)), this, SLOT(receivePacket(QByteArray)));
+	connect(this, SIGNAL(pollSender(int)), mCT, SLOT(putModuleId(int)));
+}
+
 void RayDisplayWindow::on_pushButton_clicked()
 {
 	delete mRDS;
@@ -56,10 +64,10 @@ void RayDisplayWindow::on_pushButton_clicked()
 	ui->graphicsView->setScene(mRDS);
 	mRDS->initLeds();
 
-	cleanCT();
-	mCT = new CommunicationThread(this);
-	connect(mCT, SIGNAL(packetAvailable(QByteArray)), this, SLOT(receivePacket(QByteArray)));
-	connect(this, SIGNAL(pollSender(int)), mCT, SLOT(putModuleId(int)));
+	if (nullptr == mCT)
+	{
+		initCT();
+	}
 	mCT->start();
 
 	mTimer = new QTimer(this);

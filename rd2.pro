@@ -23,11 +23,14 @@ TEMPLATE = app
 SOURCES += main.cpp\
         RayDisplayWindow.cpp \
     RayDisplayScene.cpp \
-    CommunicationThread.cpp
+    CommunicationThread.cpp \
+    TrackerInterface.cpp
 
 HEADERS  += RayDisplayWindow.h \
     RayDisplayScene.h \
-    CommunicationThread.h
+    CommunicationThread.h \
+    TrackerInterface.h \
+    common.h
 
 FORMS    += RayDisplayWindow.ui
 

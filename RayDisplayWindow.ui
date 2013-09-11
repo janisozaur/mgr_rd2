@@ -63,10 +63,10 @@
      <string>calibrate</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="pushButton_3">
+   <widget class="QPushButton" name="startPollPushButton">
     <property name="geometry">
      <rect>
-      <x>420</x>
+      <x>460</x>
       <y>90</y>
       <width>98</width>
       <height>27</height>
@@ -87,6 +87,19 @@
     </property>
     <property name="text">
      <string>:/res/calibration.json</string>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="contPollingCheckBox">
+    <property name="geometry">
+     <rect>
+      <x>460</x>
+      <y>50</y>
+      <width>151</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>continue polling</string>
     </property>
    </widget>
   </widget>

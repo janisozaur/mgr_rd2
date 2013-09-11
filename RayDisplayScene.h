@@ -5,6 +5,7 @@
 #include <QList>
 #include <QVector>
 #include <QBitArray>
+#include "RayDisplayWindow.h"
 //#include <opencv2/core/core.hpp>
 
 //#include "Tracker.h"
@@ -40,12 +41,12 @@ class RayDisplayScene : public QGraphicsScene
 	};
 
 public:
-	explicit RayDisplayScene(QObject *parent = 0);
+	explicit RayDisplayScene(const Calibration cal, QObject *parent = 0);
 	virtual ~RayDisplayScene();
 	void initLeds();
 	void lightenSender(int senderId, const int &angle);
 	void lightenSender(const int senderId, const QVector<QBitArray> &detectors, const QVector<QBitArray> &calibration, const bool clear = true);
-	void lightenSender(const int senderId, const QVector<QBitArray> &detectors);
+	void lightenSender(const int senderId, const QHash<int, QBitArray> &detectors);
 	int sendersCount() const;
 	bool isCollisionEnabled() const;
 	void updateCollisions();
@@ -61,7 +62,8 @@ signals:
 
 public slots:
 	void initRays(const int &angle);
-	void clearRays();
+	void clearRays(const int sender);
+	void clearAllRays();
 	void clearObstacle();
 	void setCollisionEnabled(bool enable);
 
@@ -76,7 +78,7 @@ private:
 	QVector<Sender> mSenders;
 	QVector<QGraphicsEllipseItem *> mReceivers;
 	QVector<QVector<QGraphicsEllipseItem *> > mSidedReceivers;
-	QVector<QGraphicsLineItem *> mRays;
+	QVector<QVector<QGraphicsLineItem *>> mRays;
 	QPolygonF mObstacle;
 	QGraphicsPolygonItem *mGraphicsObstacle;
 	QVector<Circle> mCircles;
@@ -86,6 +88,7 @@ private:
 	QVector<QVector<QGraphicsLineItem *> > mCollidedRaysGraphics;
 	QVector<QList<QGraphicsPolygonItem *> > mTriangles;
 	QVector<QGraphicsTextItem *> mRayNumbers;
+	const Calibration mCalibration;
 //	QVector<QList<QVector<cv::Point2i> > > mCvPolygons;
 //	QVector<cv::Mat> mMats;
 //	Tracker mTracker;

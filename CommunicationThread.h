@@ -6,6 +6,11 @@
 #include <QMutex>
 #include <QVector>
 #include <RayDisplayWindow.h>
+#include <QString>
+
+#include "common.h"
+
+typedef QPair<int, ReadType> ModuleReadType;
 
 class QextSerialPort;
 
@@ -21,7 +26,7 @@ signals:
 
 public slots:
     void finish();
-    void putModuleId(int id);
+    void putModuleId(const int id, const ReadType type);
     void setCalibration(Calibration cal);
 
 protected:
@@ -29,15 +34,22 @@ protected:
 
 private:
     void emitPackets(const QByteArray fresh);
-    int getModuleID();
+    void readSingle(const int sender);
+    void readAll(const int sender);
+    ModuleReadType getModuleID();
     QextSerialPort *mSerial;
     QByteArray mBuffer;
     bool mAskedToFinish;
     QSemaphore mWriteSemaphore;
-    QVector<int> mModuleIDs;
+    QVector<ModuleReadType> mModuleIDs;
     QMutex mModulesMutex;
     char mCharBuffer[1024];
     Calibration mCalibrationData;
+
+	const static QString senderFormat;
+	const static QString recFormat;
+	const static QByteArray readCommand;
+	const static QString readAllFormat;
 };
 
 #endif // COMMUNICATIONTHREAD_H

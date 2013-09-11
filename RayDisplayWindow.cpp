@@ -53,14 +53,14 @@ void RayDisplayWindow::initCT()
 	mCT = new CommunicationThread(this);
 	mCT->setCalibration(mCalibration);
 	connect(mCT, SIGNAL(packetAvailable(QByteArray)), this, SLOT(receivePacket(QByteArray)));
-	connect(this, SIGNAL(pollSender(int)), mCT, SLOT(putModuleId(int)));
+	connect(this, SIGNAL(pollSender(int,ReadType)), mCT, SLOT(putModuleId(int,ReadType)));
 }
 
 void RayDisplayWindow::on_pushButton_clicked()
 {
 	delete mRDS;
 	delete mTimer;
-	mRDS = new RayDisplayScene(this);
+	mRDS = new RayDisplayScene(mCalibration, this);
 	ui->graphicsView->setScene(mRDS);
 	mRDS->initLeds();
 
@@ -72,47 +72,32 @@ void RayDisplayWindow::on_pushButton_clicked()
 
 	mTimer = new QTimer(this);
 	connect(mTimer, SIGNAL(timeout()), this, SLOT(pollNextSender()));
+	connect(ui->startPollPushButton, SIGNAL(clicked()), this, SLOT(pollNextSender()));
 	connect(this, SIGNAL(packetAvailable(QByteArray)), this, SLOT(receivePacket(QByteArray)));
 	mTimer->setInterval(1000);
-	mTimer->start();
+	//mTimer->start();
+}
+
+int RayDisplayWindow::getNextSenderId()
+{
+	const int sender = mSenderId++;
+	mSenderId = mSenderId % 20;
+	return sender;
 }
 
 void RayDisplayWindow::pollNextSender()
 {
-	qDebug() << "polling module" << mSenderId;
-	emit pollSender(mSenderId++);
-	mSenderId = mSenderId % 20;
-}
-
-/*void RayDisplayWindow::pollSender(const int senderId)
-{
-	//qDebug() << "main thread:" << QThread::currentThreadId();
-	QString format("a%1\r");
-	QString command(format.arg(QString::number(senderId).rightJustified(2, '0')));
-	//emit serialWrite(command);
-	mSerial.write(command.toUtf8());
-	qDebug() << __func__ << " thread:" << QThread::currentThreadId();
-	for (int i = 0; i < 20; i++) {
-		if (senderId == i)
-		{
-			continue;
-		}
-		QString rformat("e%1\r");
-		QString rcommand(rformat.arg(QString::number(i).rightJustified(2, '0')));
-		qDebug() << "rcommand" << rcommand << ", " << rcommand.toUtf8().toHex();
-		//emit serialWrite(rcommand);
-		qint64 written = mSerial.write(rcommand.toUtf8().constData(), rcommand.size());
-		mSerial.flush();
-		if (written != rcommand.size())
-		{
-			qDebug() << "HERE BE DRAGONS ##########################";
-		}
-		QString readCommand("r\r");
-		mSerial.write(readCommand.toUtf8());
-		mSerial.flush();
-		QThread::usleep(10);
+	if (QObject::sender() != nullptr)
+	{
+		qDebug() << "polling called from" << QObject::sender();
+	} else {
+		qDebug() << "polling called directly!";
 	}
-}*/
+	int sender = getNextSenderId();
+	qDebug() << "polling module" << sender;
+	//emit pollSender(sender, ReadSingle);
+	emit pollSender(sender, ReadAll);
+}
 
 void RayDisplayWindow::readCalibration(QString filename)
 {
@@ -182,12 +167,13 @@ void RayDisplayWindow::readCalibration(QString filename)
             mCalibration[senderId].insert(recId, ba);
         }
     }
+    qDebug() << mCalibration;
 }
 
 void RayDisplayWindow::receivePacket(QByteArray packet)
 {
 	//qDebug() << __func__ << packet;
-	//qDebug() << "got new packet, size = " << packet.size();
+	qDebug() << __PRETTY_FUNCTION__ << "got new packet, size = " << packet.size();
 	//Q_ASSERT(packet.size() > 0);
 	if (packet.size() <= 0)
 	{
@@ -206,40 +192,60 @@ void RayDisplayWindow::receivePacket(QByteArray packet)
 			const qint8 receiver = packet.at(2);
 			Q_ASSERT(0 <= receiver);
 			Q_ASSERT(20 > receiver);
-			QVector<QBitArray> receiversValues(20, QBitArray(8));
-			QBitArray ba(8);
+			QHash<int, QBitArray> receiversValues;
+			QBitArray ba(8, true);
+			qDebug() << "value:" << int(packet.at(3));
 			for (qint8 i = 0; i < 8; i++)
 			{
 				if (packet.at(3) & (1 << i))
 				{
-					ba.setBit(i);
+					ba.setBit(i, false);
 				}
 			}
-			receiversValues[receiver] = ba;
+			receiversValues.insert(receiver, ba);
 			mRDS->lightenSender(sender, receiversValues);
+			if (ui->contPollingCheckBox->isChecked())
+			{
+				pollNextSender();
+			}
 		}
 		break;
 	case 'p':
 		{
+			qDebug() << "entered p";
 			const qint8 count = packet.size() - 2;
 			Q_ASSERT(count > 0);
 			const qint8 sender = packet.at(1);
 			Q_ASSERT(0 <= sender);
 			Q_ASSERT(20 > sender);
-			QVector<QBitArray> receiversValues;
-			for (int j = 0; j < 20; j++)
+			QHash<int, QBitArray> receiversValues;
+			const QHash<int, QBitArray> senderCal = mCalibration.at(sender);
+			const QList<int> receiversCal = senderCal.keys();
+			Q_ASSERT(receiversCal.size() == count);
+			// the assert above guarantees this is exactly size of receiversCal
+			for (int j = 0; j < count; j++)
 			{
-				QBitArray ba(8);
+				QBitArray ba(8, true);
+				const int receiver = receiversCal.at(j);
 				for (qint8 i = 0; i < 8; i++)
 				{
 					if (packet.at(2 + j) & (1 << i))
 					{
-						ba.setBit(i);
+						ba.setBit(i, false);
 					}
 				}
-				receiversValues << ba;
+				receiversValues.insert(receiver, ba);
 			}
+			qDebug() << "lighting";
 			mRDS->lightenSender(sender, receiversValues);
+			if (ui->contPollingCheckBox->isChecked())
+			{
+				qDebug() << "scheduling next polling";
+				QTimer::singleShot(100, this, SLOT(pollNextSender()));
+				//pollNextSender();
+			} else {
+				//qDebug() << "################## here be dragons";
+			}
 		}
 	}
 }

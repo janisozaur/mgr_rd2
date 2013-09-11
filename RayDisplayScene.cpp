@@ -9,8 +9,9 @@
 
 #include <QDebug>
 
-RayDisplayScene::RayDisplayScene(QObject *parent) :
-	QGraphicsScene(parent), mCollisionEnabled(false)
+RayDisplayScene::RayDisplayScene(const Calibration cal, QObject *parent) :
+	QGraphicsScene(parent), mCollisionEnabled(false),
+	mCalibration(cal)
 {
 	mGraphicsObstacle = addPolygon(mObstacle, QPen(QBrush(Qt::green), 2));
 }
@@ -154,6 +155,7 @@ void RayDisplayScene::initLeds()
 	mCollidedRaysGraphics.resize(mSenders.size());
 	mTriangles.clear();
 	mTriangles.resize(mSenders.size());
+	mRays.resize(mSenders.size());
 
 	/*QVector<cv::Point> points;
 	points << cv::Point2i(0, 0);
@@ -316,7 +318,7 @@ void RayDisplayScene::lightenSender(int senderId, const int &angle)
 			}
 		}
 		if (r != nullptr) {
-			mRays.append(r);
+			mRays[senderId].append(r);
 		}
 	}
 	// add border rays of another colour
@@ -325,13 +327,13 @@ void RayDisplayScene::lightenSender(int senderId, const int &angle)
 		// first
 		{
 			r = addLine(senderRays.at(0).line, QPen(QBrush(Qt::yellow), 1));
-			mRays.append(r);
+			mRays[senderId].append(r);
 		}
 		// last
 		if (senderRays.size() > 1/* && !senderRays.at(senderRays.size() - 1).visible*/) {
 			//senderCollidedRays << senderRays.at(senderRays.size() - 1).line;
 			r = addLine(senderRays.at(senderRays.size() - 1).line, QPen(QBrush(Qt::yellow), 1));
-			mRays.append(r);
+			mRays[senderId].append(r);
 		}
 		// on every state change
 		for (int i = 1; i < senderRays.size() - 1; i++) {
@@ -360,23 +362,41 @@ void RayDisplayScene::lightenSender(int senderId, const int &angle)
 	updateCollisions();
 }
 
-void RayDisplayScene::lightenSender(const int senderId, const QVector<QBitArray> &detectors)
+void RayDisplayScene::lightenSender(const int senderId, const QHash<int, QBitArray> &detectors)
 {
-	const int size = detectors.size();
-	clearRays();
-	for (int i = 0; i < size; i++)
+	//const int size = detectors.size();
+	clearRays(senderId);
+	/*QVector<RayStatus> rayStatuses;
+	rayStatuses.reserve(size * 8);
+	QVector<Ray> senderRays;
+	senderRays.reserve(10);*/
+	const QPointF senderPos(mSenders.at(senderId).r->pos());
+	const QHash<int, QBitArray> sender(mCalibration.at(senderId));
+	QHash<int, QBitArray>::const_iterator dIt = detectors.constBegin();
+	const QHash<int, QBitArray>::const_iterator dEnd = detectors.constEnd();
+	QVector<QGraphicsLineItem *> rays;
+	rays.reserve(detectors.size() * 8);
+	for (; dIt != dEnd; dIt++)
 	{
+		const QBitArray dBa(*dIt);
+		// sender calibration should not really use iterator, just look-up by key
+		const QBitArray cBa(sender.value(dIt.key()));
 		for (int j = 0; j < 8; j++)
 		{
-			if (detectors.at(i).testBit(j))
+			// if ray was received correctly
+			// or
+			// it was not included in the mask
+			// skip it
+			if ((dBa.testBit(j) || !cBa.testBit(j)))
 			{
 				continue;
 			}
-			QLineF line(mSenders.at(senderId).r->pos(), mReceivers.at(i * 8 + j)->pos());
+			QLineF line(senderPos, mReceivers.at(dIt.key() * 8 + j)->pos());
 			QGraphicsLineItem *graphicsLine = addLine(line, QPen(QBrush(Qt::black), 1));
-			mRays.append(graphicsLine);
+			rays.append(graphicsLine);
 		}
 	}
+	mRays[senderId] = rays;
 }
 
 void RayDisplayScene::lightenSender(const int senderId, const QVector<QBitArray> &, const QVector<QBitArray> &, const bool )
@@ -422,12 +442,21 @@ void RayDisplayScene::initRays(const int &angle)
 	}
 }
 
-void RayDisplayScene::clearRays()
+void RayDisplayScene::clearRays(const int sender)
 {
-	for (int i = 0; i < mRays.size(); i++) {
-		delete mRays.at(i);
+	QVector<QGraphicsLineItem *> &rays = mRays[sender];
+	for (int i = 0; i < rays.size(); i++) {
+		delete rays.at(i);
 	}
-	mRays.resize(0);
+	mRays[sender].resize(0);
+}
+
+void RayDisplayScene::clearAllRays()
+{
+	for (int i = 0; i < mRays.size(); i++)
+	{
+		clearRays(i);
+	}
 }
 
 void RayDisplayScene::mousePressEvent(QGraphicsSceneMouseEvent *event)
@@ -450,11 +479,16 @@ void RayDisplayScene::mousePressEvent(QGraphicsSceneMouseEvent *event)
 
 void RayDisplayScene::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
-	for (int i = 0; i < mRays.size(); i++) {
-		const float distSq = pointToLineDistSquared(event->scenePos(), mRays.at(i)->line());
-		const bool visible = distSq > 4;
-		if (!(mRays.at(i)->isVisible() & visible)) {
-			mRays[i]->setVisible(visible);
+	for (int i = 0; i < mRays.size(); i++)
+	{
+		for (int j = 0; j < mRays.at(i).size(); j++)
+		{
+			const float distSq = pointToLineDistSquared(event->scenePos(), mRays.at(i).at(j)->line());
+			const bool visible = distSq > 4;
+			if (!(mRays.at(i).at(j)->isVisible() & visible))
+			{
+				mRays[i][j]->setVisible(visible);
+			}
 		}
 	}
 }

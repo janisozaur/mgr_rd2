@@ -6,6 +6,7 @@
 #include <QHash>
 #include <QVector>
 #include <QBitArray>
+#include "common.h"
 
 class RayDisplayScene;
 class QTimer;
@@ -28,6 +29,7 @@ public:
 	
 	void cleanCT();
 	void initCT();
+	int getNextSenderId();
 private slots:
 	void on_pushButton_clicked();
 	void pollNextSender();
@@ -39,7 +41,7 @@ private slots:
 signals:
 	void serialWrite(QString command);
 	void packetAvailable(QByteArray packet);
-	void pollSender(const int senderId);
+	void pollSender(const int senderId, const ReadType type);
 
 private:
 	void readCalibration(QString filename);

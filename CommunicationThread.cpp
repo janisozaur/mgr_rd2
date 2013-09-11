@@ -4,6 +4,11 @@
 #include <QMutexLocker>
 #include <QDebug>
 
+const QString CommunicationThread::senderFormat = "a%1\r";
+const QString CommunicationThread::recFormat = "e%1\r";
+const QByteArray CommunicationThread::readCommand = QString("r\r").toLocal8Bit();
+const QString CommunicationThread::readAllFormat = "p%1%2\r";
+
 CommunicationThread::CommunicationThread(QObject *parent) :
     QThread(parent),
     mSerial(nullptr),
@@ -26,6 +31,7 @@ void CommunicationThread::emitPackets(const QByteArray fresh)
 	Q_UNUSED(cnt);
 	//qDebug() << __func__ << cnt++;
 	mBuffer += fresh;
+	int emitted = 0;
 	if (fresh.contains(SEP))
 	{
 		int start = 0;
@@ -35,8 +41,18 @@ void CommunicationThread::emitPackets(const QByteArray fresh)
 			if (start != end)
 			{
 				const QByteArray packetDecoded(QByteArray::fromBase64(packetRaw));
-				//qDebug() << packetRaw << ", s = " << int(packetDecoded.at(1)) << ", r = "
-				//		 << int(packetDecoded.at(2)) << ", v = " << int(packetDecoded.at(3));
+				if (packetDecoded.at(0) == 'r') {
+					qDebug() << packetRaw << ", s = " << int(packetDecoded.at(1)) << ", r = "
+							 << int(packetDecoded.at(2)) << ", v = " << int(packetDecoded.at(3));
+				} else {
+					qDebug() << packetRaw << ", size = " << packetDecoded.size()
+							 << ", sender = " << int(packetDecoded.at(1));
+					for (int i = 2; i < packetDecoded.size(); i++)
+					{
+						qDebug() << int(packetDecoded.at(i));
+					}
+				}
+				emitted++;
 				emit packetAvailable(packetDecoded);
 			}
 			start = end + 1;
@@ -45,12 +61,17 @@ void CommunicationThread::emitPackets(const QByteArray fresh)
 		mBuffer = next;
 		//qDebug() << "next: " << next.toHex();
 	}
+	qDebug() << "emitted" << emitted << "packets";
+	if (emitted == 0)
+	{
+		qDebug() << mBuffer << ", in hex:" << mBuffer.toHex();
+	}
 }
 
 QByteArray CommunicationThread::readBytes(const int howMany)
 {
 	QByteArray data;
-	while (data.size() < howMany && !mAskedToFinish)
+	while ((!data.endsWith('\r') || data.size() < howMany) && !mAskedToFinish)
 	{
 		qint64 readCount = mSerial->read(mCharBuffer, 1024);
 		if (readCount < 0) {
@@ -60,6 +81,55 @@ QByteArray CommunicationThread::readBytes(const int howMany)
 		}
 	}
 	return data;
+}
+
+void CommunicationThread::readSingle(const int sender)
+{
+	mSerial->write(senderFormat.arg(QString::number(sender).rightJustified(2, '0')).toLocal8Bit());
+	const QHash<int, QBitArray> senderCal = mCalibrationData.at(sender);
+	const QList<int> receiversCal = senderCal.keys();
+	for (int i = 0; i < senderCal.size(); i++)
+	//for (int i = 0; i < 20 && !mAskedToFinish; i++)
+	{
+		const int receiver = receiversCal.at(i);
+		const QString recStr = QString::number(receiver);
+		mSerial->write(recFormat.arg(recStr.rightJustified(2, '0')).toLocal8Bit());
+		mSerial->flush();
+		usleep(100);
+		mSerial->write(readCommand);
+		mSerial->flush();
+		//QThread::yieldCurrentThread();
+		const QByteArray data = readBytes(9);
+		//qDebug() << "data:" << data;
+		emitPackets(data);
+	}
+}
+
+void CommunicationThread::readAll(const int sender)
+{
+	//mSerial->write(senderFormat.arg(QString::number(sender).rightJustified(2, '0')).toLocal8Bit());
+	const QHash<int, QBitArray> senderCal = mCalibrationData.at(sender);
+	const QList<int> receiversCal = senderCal.keys();
+	const QString senderId(QChar('a' + sender));
+	QString receivers;
+	receivers.reserve(receiversCal.size());
+	for (QList<int>::const_iterator it = receiversCal.constBegin(); it != receiversCal.constEnd(); it++)
+	{
+		receivers += QChar('a' + (*it));
+	}
+	const QString command(readAllFormat.arg(senderId, receivers));
+	qDebug() << "command:" << command;
+	// 2 header bytes, 1 trailing '\r', actual response, +2 for rounding up
+	// to base 64
+	const int replySize = ((2 + receiversCal.size() + 2) / 3) * 4 + 1;
+	const QByteArray actualData(command.toLocal8Bit());
+	qDebug() << "actual data:" << actualData << ", in hex:" << actualData.toHex();
+	qDebug() << "expecting" << replySize << "bytes in response";
+	mSerial->write(actualData);
+	mSerial->flush();
+	const QByteArray data = readBytes(replySize);
+	qDebug() << "response size:" << data.size() << ", it is: " << data << ", in hex:" << data.toHex();
+	emitPackets(data);
 }
 
 void CommunicationThread::run()
@@ -75,9 +145,6 @@ void CommunicationThread::run()
 	mSerial->setQueryMode(QextSerialPort::Polling);
 	const bool opened = mSerial->open(QIODevice::ReadWrite);
 	Q_ASSERT(opened);
-	const QString senderFormat("a%1\r");
-	const QString recFormat("e%1\r");
-	const QByteArray readCommand(QString("r\r").toLocal8Bit());
 	while (!mAskedToFinish)
 	{
 		qDebug() << "waiting";
@@ -87,40 +154,33 @@ void CommunicationThread::run()
 		{
 			break;
 		}
-		const int sender = getModuleID();
-		qDebug() << "polling" << sender;
-		mSerial->write(senderFormat.arg(QString::number(sender).rightJustified(2, '0')).toLocal8Bit());
-		const QHash<int, QBitArray> senderCal = mCalibrationData.at(sender);
-		const QList<int> receiversCal = senderCal.keys();
-		for (int i = 0; i < senderCal.size(); i++)
-		//for (int i = 0; i < 20 && !mAskedToFinish; i++)
+		const ModuleReadType toRead = getModuleID();
+		const int sender = toRead.first;
+		switch (toRead.second)
 		{
-			const int receiver = receiversCal.at(i);
-			const QString recStr = QString::number(receiver);
-			mSerial->write(recFormat.arg(recStr.rightJustified(2, '0')).toLocal8Bit());
-			mSerial->flush();
-			usleep(100);
-			mSerial->write(readCommand);
-			mSerial->flush();
-			//QThread::yieldCurrentThread();
-			const QByteArray data = readBytes(9);
-			//qDebug() << "data:" << data;
-			emitPackets(data);
+			case ReadSingle:
+				readSingle(sender);
+				break;
+			case ReadAll:
+				readAll(sender);
+				break;
 		}
+
+		qDebug() << "polling" << sender;
 	}
 	mSerial->close();
 	delete mSerial;
 }
 
-void CommunicationThread::putModuleId(int id)
+void CommunicationThread::putModuleId(const int id, const ReadType type)
 {
 	QMutexLocker l(&mModulesMutex);
 	Q_UNUSED(l);
-	mModuleIDs << id;
+	mModuleIDs << qMakePair(id, type);
 	mWriteSemaphore.release();
 }
 
-int CommunicationThread::getModuleID()
+ModuleReadType CommunicationThread::getModuleID()
 {
 	QMutexLocker l(&mModulesMutex);
 	Q_UNUSED(l);

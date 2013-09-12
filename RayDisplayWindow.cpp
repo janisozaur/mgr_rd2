@@ -76,6 +76,7 @@ void RayDisplayWindow::on_pushButton_clicked()
 	connect(ui->startPollPushButton, SIGNAL(clicked()), this, SLOT(pollNextSender()));
 	connect(this, SIGNAL(packetAvailable(QByteArray)), this, SLOT(receivePacket(QByteArray)));
 	connect(ui->drawHeatMapPushButton, SIGNAL(clicked()), mRDS, SLOT(drawHeatMap()));
+	connect(this, SIGNAL(drawHeatmap()), mRDS, SLOT(drawHeatMap()));
 	mTimer->setInterval(1000);
 	//mTimer->start();
 }
@@ -243,12 +244,16 @@ void RayDisplayWindow::receivePacket(QByteArray packet)
 			if (ui->contPollingCheckBox->isChecked())
 			{
 				qDebug() << "scheduling next polling";
-				QTimer::singleShot(100, this, SLOT(pollNextSender()));
+				QTimer::singleShot(ui->pollingIntervalSpinBox->value(), this, SLOT(pollNextSender()));
 				//pollNextSender();
 			} else {
 				//qDebug() << "################## here be dragons";
 			}
 		}
+	}
+	if (ui->refreshHeatmapCheckBox->isChecked())
+	{
+		emit drawHeatmap();
 	}
 }
 

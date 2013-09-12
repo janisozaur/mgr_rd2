@@ -44,6 +44,7 @@ signals:
 	void serialWrite(QString command);
 	void packetAvailable(QByteArray packet);
 	void pollSender(const int senderId, const ReadType type);
+	void drawHeatmap();
 
 private:
 	void readCalibration(QString filename);

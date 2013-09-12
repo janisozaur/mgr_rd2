@@ -128,6 +128,38 @@
      <string>draw heat map</string>
     </property>
    </widget>
+   <widget class="QSpinBox" name="pollingIntervalSpinBox">
+    <property name="geometry">
+     <rect>
+      <x>460</x>
+      <y>10</y>
+      <width>131</width>
+      <height>27</height>
+     </rect>
+    </property>
+    <property name="minimum">
+     <number>1</number>
+    </property>
+    <property name="maximum">
+     <number>100000</number>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="refreshHeatmapCheckBox">
+    <property name="geometry">
+     <rect>
+      <x>650</x>
+      <y>10</y>
+      <width>161</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>Makes scene refresh heatmap after every packet</string>
+    </property>
+    <property name="text">
+     <string>refresh heatmap</string>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">

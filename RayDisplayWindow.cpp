@@ -12,6 +12,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
+#include <QSvgGenerator>
 
 #include <QDebug>
 
@@ -260,4 +261,16 @@ void RayDisplayWindow::error(QString errormsg)
 void RayDisplayWindow::on_pushButton_2_clicked()
 {
 	readCalibration(ui->lineEdit_2->text());
+}
+
+void RayDisplayWindow::on_saveSceneSvgPushButton_clicked()
+{
+	QSvgGenerator generator;
+	generator.setFileName("scene.svg");
+	generator.setSize(mRDS->sceneRect().size().toSize());
+	QPainter painter;
+	painter.begin(&generator);
+	mRDS->render(&painter);
+	painter.end();
+	qDebug() << "saved";
 }

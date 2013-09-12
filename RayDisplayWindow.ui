@@ -102,6 +102,19 @@
      <string>continue polling</string>
     </property>
    </widget>
+   <widget class="QPushButton" name="drawHeatMapPushButton">
+    <property name="geometry">
+     <rect>
+      <x>650</x>
+      <y>50</y>
+      <width>161</width>
+      <height>27</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>draw heat map</string>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">

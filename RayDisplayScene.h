@@ -66,6 +66,7 @@ public slots:
 	void clearAllRays();
 	void clearObstacle();
 	void setCollisionEnabled(bool enable);
+	void drawHeatMap();
 
 protected:
 	void mousePressEvent(QGraphicsSceneMouseEvent *);

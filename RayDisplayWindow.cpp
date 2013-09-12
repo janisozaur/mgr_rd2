@@ -74,6 +74,7 @@ void RayDisplayWindow::on_pushButton_clicked()
 	connect(mTimer, SIGNAL(timeout()), this, SLOT(pollNextSender()));
 	connect(ui->startPollPushButton, SIGNAL(clicked()), this, SLOT(pollNextSender()));
 	connect(this, SIGNAL(packetAvailable(QByteArray)), this, SLOT(receivePacket(QByteArray)));
+	connect(ui->drawHeatMapPushButton, SIGNAL(clicked()), mRDS, SLOT(drawHeatMap()));
 	mTimer->setInterval(1000);
 	//mTimer->start();
 }

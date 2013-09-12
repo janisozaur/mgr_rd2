@@ -425,6 +425,34 @@ void RayDisplayScene::lightenSender(const int senderId, const QHash<int, QBitArr
 	mRays[senderId] = rays;
 }
 
+void RayDisplayScene::drawHeatMap()
+{
+	QHash<QPair<int, int>, int> allRectangles;
+	int max = 0;
+	for (int i = 0; i < mSendersRectanglesPairs.size(); i++)
+	{
+		QHash<QPair<int, int>, int>::const_iterator it = mSendersRectanglesPairs.at(i).constBegin();
+		const QHash<QPair<int, int>, int>::const_iterator end = mSendersRectanglesPairs.at(i).constEnd();
+		for (; it != end; it++)
+		{
+			allRectangles[it.key()] += it.value();
+			if (allRectangles.value(it.key()) > max)
+			{
+				max = allRectangles.value(it.key());
+			}
+		}
+	}
+	QHash<QPair<int, int>, int>::const_iterator it = allRectangles.constBegin();
+	const QHash<QPair<int, int>, int>::const_iterator end = allRectangles.constEnd();
+	for (; it != end; it++)
+	{
+		const int v = 255 - (qreal(it.value()) / qreal(max)) * 255;
+		QColor c(QColor::fromHsl(v, 255, 128));
+		addRect(QRectF(it.key().first * mRW, it.key().second * mRH, mRW, mRH), QPen(QBrush(c), 1), QBrush(c));
+	}
+	qDebug() << "heat map drawn!";
+}
+
 bool RayDisplayScene::lineRectIntersects(const QLineF &line, const QRectF &rect) const
 {
 	if (line.intersect(QLineF(rect.topLeft(), rect.topRight()), nullptr) == QLineF::BoundedIntersection)

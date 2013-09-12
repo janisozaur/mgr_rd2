@@ -11,7 +11,9 @@
 
 RayDisplayScene::RayDisplayScene(const Calibration cal, QObject *parent) :
 	QGraphicsScene(parent), mCollisionEnabled(false),
-	mCalibration(cal)
+	mCalibration(cal),
+	mRW(10),
+	mRH(10)
 {
 	mGraphicsObstacle = addPolygon(mObstacle, QPen(QBrush(Qt::green), 2));
 }
@@ -156,6 +158,7 @@ void RayDisplayScene::initLeds()
 	mTriangles.clear();
 	mTriangles.resize(mSenders.size());
 	mRays.resize(mSenders.size());
+	mSendersRectanglesPairs.resize(mSenders.size());
 
 	/*QVector<cv::Point> points;
 	points << cv::Point2i(0, 0);
@@ -376,6 +379,8 @@ void RayDisplayScene::lightenSender(const int senderId, const QHash<int, QBitArr
 	const QHash<int, QBitArray>::const_iterator dEnd = detectors.constEnd();
 	QVector<QGraphicsLineItem *> rays;
 	rays.reserve(detectors.size() * 8);
+	QHash<QPair<int, int>, int> &rectangles = mSendersRectanglesPairs[senderId];
+	rectangles.clear();
 	for (; dIt != dEnd; dIt++)
 	{
 		const QBitArray dBa(*dIt);
@@ -394,9 +399,51 @@ void RayDisplayScene::lightenSender(const int senderId, const QHash<int, QBitArr
 			QLineF line(senderPos, mReceivers.at(dIt.key() * 8 + j)->pos());
 			QGraphicsLineItem *graphicsLine = addLine(line, QPen(QBrush(Qt::black), 1));
 			rays.append(graphicsLine);
+			const int left = qMin(line.x1(), line.x2());
+			const int right = qMax(line.x1(), line.x2());
+			const int top = qMax(line.y1(), line.y2());
+			const int bottom = qMin(line.y1(), line.y2());
+			// find bounding-box X, Y IDs
+			int xLeft = left / mRW;
+			int xRight = (right + mRW - 1) / mRW;
+			int yBottom = (top + mRH - 1) / mRH;
+			int yTop = bottom / mRH;
+			for (int x = xLeft; x < xRight; x++)
+			{
+				for (int y = yTop; y < yBottom; y++)
+				{
+					QRectF rect(x * mRW, y * mRH, mRW, mRH);
+					const bool intersects = lineRectIntersects(line, rect);
+					if (intersects)
+					{
+						rectangles[qMakePair(x, y)] += 1;
+					}
+				}
+			}
 		}
 	}
 	mRays[senderId] = rays;
+}
+
+bool RayDisplayScene::lineRectIntersects(const QLineF &line, const QRectF &rect) const
+{
+	if (line.intersect(QLineF(rect.topLeft(), rect.topRight()), nullptr) == QLineF::BoundedIntersection)
+	{
+		return true;
+	}
+	else if (line.intersect(QLineF(rect.topRight(), rect.bottomRight()), nullptr) == QLineF::BoundedIntersection)
+	{
+		return true;
+	}
+	else if (line.intersect(QLineF(rect.bottomRight(), rect.bottomLeft()), nullptr) == QLineF::BoundedIntersection)
+	{
+		return true;
+	}
+	else if (line.intersect(QLineF(rect.bottomLeft(), rect.topLeft()), nullptr) == QLineF::BoundedIntersection)
+	{
+		return true;
+	}
+	return false;
 }
 
 void RayDisplayScene::lightenSender(const int senderId, const QVector<QBitArray> &, const QVector<QBitArray> &, const bool )

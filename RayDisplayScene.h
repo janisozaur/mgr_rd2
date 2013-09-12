@@ -75,6 +75,7 @@ private:
 	bool isStartingRay(const QVector<Ray> &rays, const int idx) const;
 	bool isCornerRay(const QVector<Ray> &rays, const int idx) const;
 	bool isFinishingRay(const QVector<Ray> &rays, const int idx) const;
+	bool lineRectIntersects(const QLineF &line, const QRectF &rect) const;
 	QVector<Sender> mSenders;
 	QVector<QGraphicsEllipseItem *> mReceivers;
 	QVector<QVector<QGraphicsEllipseItem *> > mSidedReceivers;
@@ -89,6 +90,10 @@ private:
 	QVector<QList<QGraphicsPolygonItem *> > mTriangles;
 	QVector<QGraphicsTextItem *> mRayNumbers;
 	const Calibration mCalibration;
+	// a hash of pair of (X, Y) rectangle ID, for each sender
+	QVector<QHash<QPair<int, int>, int>> mSendersRectanglesPairs;
+	// rectangle width, height
+	int mRW, mRH;
 //	QVector<QList<QVector<cv::Point2i> > > mCvPolygons;
 //	QVector<cv::Mat> mMats;
 //	Tracker mTracker;

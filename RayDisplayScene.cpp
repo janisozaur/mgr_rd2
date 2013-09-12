@@ -428,6 +428,8 @@ void RayDisplayScene::lightenSender(const int senderId, const QHash<int, QBitArr
 void RayDisplayScene::drawHeatMap()
 {
 	QHash<QPair<int, int>, int> allRectangles;
+	qDeleteAll(mRectGraphics);
+	mRectGraphics.resize(0);
 	int max = 0;
 	for (int i = 0; i < mSendersRectanglesPairs.size(); i++)
 	{
@@ -448,7 +450,10 @@ void RayDisplayScene::drawHeatMap()
 	{
 		const int v = 255 - (qreal(it.value()) / qreal(max)) * 255;
 		QColor c(QColor::fromHsl(v, 255, 128));
-		addRect(QRectF(it.key().first * mRW, it.key().second * mRH, mRW, mRH), QPen(QBrush(c), 1), QBrush(c));
+		QGraphicsRectItem *r;
+		r = addRect(QRectF(it.key().first * mRW, it.key().second * mRH, mRW, mRH), QPen(QBrush(c), 1), QBrush(c));
+		r->setZValue(-1);
+		mRectGraphics << r;
 	}
 	qDebug() << "heat map drawn!";
 }

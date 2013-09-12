@@ -93,6 +93,7 @@ private:
 	const Calibration mCalibration;
 	// a hash of pair of (X, Y) rectangle ID, for each sender
 	QVector<QHash<QPair<int, int>, int>> mSendersRectanglesPairs;
+	QVector<QGraphicsRectItem *> mRectGraphics;
 	// rectangle width, height
 	int mRW, mRH;
 //	QVector<QList<QVector<cv::Point2i> > > mCvPolygons;

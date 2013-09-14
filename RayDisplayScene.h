@@ -42,7 +42,7 @@ class RayDisplayScene : public QGraphicsScene
 	};
 
 public:
-	explicit RayDisplayScene(const Calibration cal, QObject *parent = 0);
+	explicit RayDisplayScene(const Calibration cal, const int boxSize, QObject *parent = 0);
 	virtual ~RayDisplayScene();
 	void initLeds();
 	void lightenSender(int senderId, const int &angle);
@@ -71,6 +71,7 @@ public slots:
 	void setCollisionEnabled(bool enable);
 	void setDrawFakesEnabled(bool enable);
 	void drawHeatMap();
+	void toggleRayVisibility();
 
 protected:
 	void mousePressEvent(QGraphicsSceneMouseEvent *);
@@ -91,6 +92,7 @@ private:
 	QVector<QVector<QLineF> > mCollidedRays;
 	bool mCollisionEnabled;
 	bool mDrawFakes;
+	bool mRaysVisible;
 	QVector<QGraphicsEllipseItem *> mCollisions;
 	QVector<QVector<QGraphicsLineItem *> > mCollidedRaysGraphics;
 	QVector<QList<QGraphicsPolygonItem *> > mTriangles;
@@ -100,7 +102,7 @@ private:
 	QVector<QHash<QPair<int, int>, int>> mSendersRectanglesPairs;
 	QVector<QGraphicsRectItem *> mRectGraphics;
 	// rectangle width, height
-	int mRW, mRH;
+	const int mRW, mRH;
 //	QVector<QList<QVector<cv::Point2i> > > mCvPolygons;
 //	QVector<cv::Mat> mMats;
 //	Tracker mTracker;

@@ -14,165 +14,201 @@
    <string>RayDisplayWindow</string>
   </property>
   <widget class="QWidget" name="centralWidget">
-   <widget class="QPushButton" name="pushButton">
-    <property name="geometry">
-     <rect>
-      <x>110</x>
-      <y>90</y>
-      <width>98</width>
-      <height>27</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>init</string>
-    </property>
-   </widget>
-   <widget class="QLineEdit" name="lineEdit">
-    <property name="geometry">
-     <rect>
-      <x>110</x>
-      <y>50</y>
-      <width>113</width>
-      <height>27</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>ttyACM1</string>
-    </property>
-   </widget>
-   <widget class="QGraphicsView" name="graphicsView">
-    <property name="geometry">
-     <rect>
-      <x>110</x>
-      <y>170</y>
-      <width>781</width>
-      <height>331</height>
-     </rect>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="pushButton_2">
-    <property name="geometry">
-     <rect>
-      <x>270</x>
-      <y>90</y>
-      <width>98</width>
-      <height>27</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>calibrate</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="startPollPushButton">
-    <property name="geometry">
-     <rect>
-      <x>460</x>
-      <y>90</y>
-      <width>98</width>
-      <height>27</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>start polling</string>
-    </property>
-   </widget>
-   <widget class="QLineEdit" name="lineEdit_2">
-    <property name="geometry">
-     <rect>
-      <x>260</x>
-      <y>50</y>
-      <width>161</width>
-      <height>27</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>:/res/calibration.json</string>
-    </property>
-   </widget>
-   <widget class="QCheckBox" name="contPollingCheckBox">
-    <property name="geometry">
-     <rect>
-      <x>460</x>
-      <y>50</y>
-      <width>151</width>
-      <height>22</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>continue polling</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="saveSceneSvgPushButton">
-    <property name="geometry">
-     <rect>
-      <x>650</x>
-      <y>90</y>
-      <width>161</width>
-      <height>27</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>save scene as svg</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="drawHeatMapPushButton">
-    <property name="geometry">
-     <rect>
-      <x>650</x>
-      <y>50</y>
-      <width>161</width>
-      <height>27</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>draw heat map</string>
-    </property>
-   </widget>
-   <widget class="QSpinBox" name="pollingIntervalSpinBox">
-    <property name="geometry">
-     <rect>
-      <x>460</x>
-      <y>10</y>
-      <width>131</width>
-      <height>27</height>
-     </rect>
-    </property>
-    <property name="minimum">
-     <number>1</number>
-    </property>
-    <property name="maximum">
-     <number>100000</number>
-    </property>
-   </widget>
-   <widget class="QCheckBox" name="refreshHeatmapCheckBox">
-    <property name="geometry">
-     <rect>
-      <x>650</x>
-      <y>10</y>
-      <width>161</width>
-      <height>22</height>
-     </rect>
-    </property>
-    <property name="toolTip">
-     <string>Makes scene refresh heatmap after every packet</string>
-    </property>
-    <property name="text">
-     <string>refresh heatmap</string>
-    </property>
-   </widget>
-   <widget class="QCheckBox" name="drawFakesCheckBox">
-    <property name="geometry">
-     <rect>
-      <x>650</x>
-      <y>130</y>
-      <width>161</width>
-      <height>22</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>draw fake rays</string>
-    </property>
-   </widget>
+   <layout class="QVBoxLayout" name="verticalLayout_2">
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <item>
+       <widget class="QGroupBox" name="initOptsGroupBox">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="title">
+         <string>Init options</string>
+        </property>
+        <layout class="QFormLayout" name="formLayout_2">
+         <property name="fieldGrowthPolicy">
+          <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+         </property>
+         <item row="0" column="0">
+          <widget class="QLabel" name="label">
+           <property name="text">
+            <string>serial port</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QLineEdit" name="portNameLineEdit">
+           <property name="minimumSize">
+            <size>
+             <width>188</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>/dev/ttyACM0</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="label_2">
+           <property name="text">
+            <string>calibration file</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QLineEdit" name="calibrationFileLineEdit">
+           <property name="text">
+            <string>:/res/calibration.json</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="label_4">
+           <property name="text">
+            <string>box size (requires re-init)</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QSpinBox" name="boxSizeSpinBox">
+           <property name="minimum">
+            <number>5</number>
+           </property>
+           <property name="maximum">
+            <number>100</number>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="0" colspan="2">
+          <widget class="QPushButton" name="initPushButton">
+           <property name="text">
+            <string>init</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <widget class="QGroupBox" name="pollingOptsGroupBox">
+        <property name="title">
+         <string>Polling options</string>
+        </property>
+        <layout class="QFormLayout" name="formLayout">
+         <property name="fieldGrowthPolicy">
+          <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+         </property>
+         <item row="0" column="0">
+          <widget class="QLabel" name="label_3">
+           <property name="text">
+            <string>polling interval (ms)</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QSpinBox" name="pollingIntervalSpinBox">
+           <property name="minimum">
+            <number>1</number>
+           </property>
+           <property name="maximum">
+            <number>100000</number>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0" colspan="2">
+          <widget class="QCheckBox" name="contPollingCheckBox">
+           <property name="text">
+            <string>continuous polling</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="0" colspan="2">
+          <widget class="QCheckBox" name="refreshHeatmapCheckBox">
+           <property name="toolTip">
+            <string>Makes scene refresh heatmap after every packet</string>
+           </property>
+           <property name="text">
+            <string>refresh heatmap</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="0">
+          <widget class="QCheckBox" name="drawFakesCheckBox">
+           <property name="text">
+            <string>draw fake rays</string>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="0">
+          <widget class="QPushButton" name="startPollPushButton">
+           <property name="text">
+            <string>start polling</string>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="1">
+          <widget class="QPushButton" name="drawHeatMapPushButton">
+           <property name="text">
+            <string>draw heat map</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <widget class="QGroupBox" name="sceneOptsGroupBox">
+        <property name="title">
+         <string>Scene options</string>
+        </property>
+        <layout class="QVBoxLayout" name="verticalLayout">
+         <item>
+          <widget class="QPushButton" name="toggleRayVisiblityPushButton">
+           <property name="text">
+            <string>toggle ray visibility</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="saveSceneSvgPushButton">
+           <property name="text">
+            <string>save scene as svg</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <widget class="QGraphicsView" name="graphicsView">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>1</verstretch>
+       </sizepolicy>
+      </property>
+     </widget>
+    </item>
+   </layout>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">

@@ -132,9 +132,14 @@ void CommunicationThread::readAll(const int sender)
 	emitPackets(data);
 }
 
+void CommunicationThread::setPortName(QString name)
+{
+	mPortName = name;
+}
+
 void CommunicationThread::run()
 {
-	mSerial->setPortName("/dev/ttyACM0");
+	mSerial->setPortName(mPortName);
 	mSerial->setBaudRate(BAUD115200);
 	//mSerial.setBaudRate(BAUD9600);
 	mSerial->setDataBits(DATA_8);

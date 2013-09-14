@@ -55,19 +55,22 @@ void RayDisplayWindow::initCT()
 {
 	mCT = new CommunicationThread(this);
 	mCT->setCalibration(mCalibration);
+	mCT->setPortName(ui->portNameLineEdit->text());
 	connect(mCT, SIGNAL(packetAvailable(QByteArray)), this, SLOT(receivePacket(QByteArray)));
 	connect(this, SIGNAL(pollSender(int,ReadType)), mCT, SLOT(putModuleId(int,ReadType)));
 }
 
-void RayDisplayWindow::on_pushButton_clicked()
+void RayDisplayWindow::on_initPushButton_clicked()
 {
 	if (mRDS != nullptr)
 	{
 		disconnect(this, SIGNAL(drawHeatmap()), mRDS, SLOT(drawHeatMap()));
+		disconnect(ui->toggleRayVisiblityPushButton, SIGNAL(clicked()), mRDS, SLOT(toggleRayVisibility()));
 	}
 	delete mRDS;
 	delete mTimer;
-	mRDS = new RayDisplayScene(mCalibration, this);
+	readCalibration(ui->calibrationFileLineEdit->text());
+	mRDS = new RayDisplayScene(mCalibration, ui->boxSizeSpinBox->value(), this);
 	ui->graphicsView->setScene(mRDS);
 	mRDS->initLeds();
 
@@ -82,6 +85,7 @@ void RayDisplayWindow::on_pushButton_clicked()
 	connect(ui->drawHeatMapPushButton, SIGNAL(clicked()), mRDS, SLOT(drawHeatMap()));
 	connect(this, SIGNAL(drawHeatmap()), mRDS, SLOT(drawHeatMap()));
 	connect(ui->drawFakesCheckBox, SIGNAL(clicked(bool)), mRDS, SLOT(setDrawFakesEnabled(bool)));
+	connect(ui->toggleRayVisiblityPushButton, SIGNAL(clicked()), mRDS, SLOT(toggleRayVisibility()));
 	mRDS->setDrawFakesEnabled(ui->drawFakesCheckBox->isChecked());
 	mTimer->setInterval(1000);
 	//mTimer->start();
@@ -267,11 +271,6 @@ void RayDisplayWindow::error(QString errormsg)
 {
 	qDebug() << errormsg;
 	ui->statusBar->showMessage(errormsg);
-}
-
-void RayDisplayWindow::on_pushButton_2_clicked()
-{
-	readCalibration(ui->lineEdit_2->text());
 }
 
 void RayDisplayWindow::on_saveSceneSvgPushButton_clicked()

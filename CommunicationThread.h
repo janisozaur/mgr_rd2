@@ -28,6 +28,7 @@ public slots:
     void finish();
     void putModuleId(const int id, const ReadType type);
     void setCalibration(Calibration cal);
+    void setPortName(QString name);
 
 protected:
     virtual void run();
@@ -45,6 +46,7 @@ private:
     QMutex mModulesMutex;
     char mCharBuffer[1024];
     Calibration mCalibrationData;
+    QString mPortName;
 
 	const static QString senderFormat;
 	const static QString recFormat;

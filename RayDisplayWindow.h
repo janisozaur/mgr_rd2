@@ -31,14 +31,11 @@ public:
 	void initCT();
 	int getNextSenderId();
 private slots:
-	void on_pushButton_clicked();
 	void pollNextSender();
 	void receivePacket(QByteArray packet);
 	void error(QString errormsg);
-
-	void on_pushButton_2_clicked();
-
 	void on_saveSceneSvgPushButton_clicked();
+	void on_initPushButton_clicked();
 
 signals:
 	void serialWrite(QString command);

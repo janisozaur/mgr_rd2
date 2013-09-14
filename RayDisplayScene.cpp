@@ -9,11 +9,12 @@
 
 #include <QDebug>
 
-RayDisplayScene::RayDisplayScene(const Calibration cal, QObject *parent) :
+RayDisplayScene::RayDisplayScene(const Calibration cal, const int boxSize, QObject *parent) :
 	QGraphicsScene(parent), mCollisionEnabled(false), mDrawFakes(false),
+	mRaysVisible(true),
 	mCalibration(cal),
-	mRW(10),
-	mRH(10)
+	mRW(boxSize),
+	mRH(boxSize)
 {
 	mGraphicsObstacle = addPolygon(mObstacle, QPen(QBrush(Qt::green), 2));
 }
@@ -207,6 +208,18 @@ QVector<QLineF> & RayDisplayScene::clearCollidedRays(int senderId)
 	}
 
 	return senderCollidedRays;
+}
+
+void RayDisplayScene::toggleRayVisibility()
+{
+	mRaysVisible = !mRaysVisible;
+	for (int i = 0; i < mRays.size(); i++)
+	{
+		for (int j = 0; j < mRays.at(i).size(); j++)
+		{
+			mRays[i][j]->setVisible(mRaysVisible);
+		}
+	}
 }
 
 /*cv::Mat RayDisplayScene::cvtrack1(int senderId, QVector<Ray> senderRays)

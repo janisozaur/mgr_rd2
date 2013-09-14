@@ -485,8 +485,8 @@ void RayDisplayScene::drawHeatMap()
 	const qreal range = qreal(max - min);
 	for (; it != end; it++)
 	{
-		const int v = 255 - (qreal(it.value() - min) / range) * 255;
-		QColor c(QColor::fromHsl(v, 255, 128));
+		const int h = 240 - (qreal(it.value() - min) / range) * 240;
+		QColor c(QColor::fromHsl(h, 255, 128));
 		QGraphicsRectItem *r;
 		r = addRect(QRectF(it.key().first * mRW, it.key().second * mRH, mRW, mRH), QPen(QBrush(c), 1), QBrush(c));
 		r->setZValue(-1);

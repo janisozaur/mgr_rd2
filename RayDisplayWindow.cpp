@@ -25,6 +25,8 @@ RayDisplayWindow::RayDisplayWindow(QWidget *parent) :
 	mCT(nullptr)
 {
 	ui->setupUi(this);
+	connect(this, SIGNAL(packetAvailable(QByteArray)), this, SLOT(receivePacket(QByteArray)));
+	connect(ui->startPollPushButton, SIGNAL(clicked()), this, SLOT(pollNextSender()));
 }
 
 void RayDisplayWindow::cleanCT()
@@ -59,6 +61,10 @@ void RayDisplayWindow::initCT()
 
 void RayDisplayWindow::on_pushButton_clicked()
 {
+	if (mRDS != nullptr)
+	{
+		disconnect(this, SIGNAL(drawHeatmap()), mRDS, SLOT(drawHeatMap()));
+	}
 	delete mRDS;
 	delete mTimer;
 	mRDS = new RayDisplayScene(mCalibration, this);
@@ -73,11 +79,10 @@ void RayDisplayWindow::on_pushButton_clicked()
 
 	mTimer = new QTimer(this);
 	connect(mTimer, SIGNAL(timeout()), this, SLOT(pollNextSender()));
-	connect(ui->startPollPushButton, SIGNAL(clicked()), this, SLOT(pollNextSender()));
-	connect(this, SIGNAL(packetAvailable(QByteArray)), this, SLOT(receivePacket(QByteArray)));
 	connect(ui->drawHeatMapPushButton, SIGNAL(clicked()), mRDS, SLOT(drawHeatMap()));
 	connect(this, SIGNAL(drawHeatmap()), mRDS, SLOT(drawHeatMap()));
 	connect(ui->drawFakesCheckBox, SIGNAL(clicked(bool)), mRDS, SLOT(setDrawFakesEnabled(bool)));
+	mRDS->setDrawFakesEnabled(ui->drawFakesCheckBox->isChecked());
 	mTimer->setInterval(1000);
 	//mTimer->start();
 }

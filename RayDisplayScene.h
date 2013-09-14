@@ -19,6 +19,7 @@ class RayDisplayScene : public QGraphicsScene
 {
 	Q_OBJECT
 	Q_PROPERTY( bool collisionEnabled READ isCollisionEnabled WRITE setCollisionEnabled )
+	Q_PROPERTY( bool drawFakes READ isDrawingFakesEnabled WRITE setDrawFakesEnabled )
 
 	struct Sender
 	{
@@ -49,6 +50,7 @@ public:
 	void lightenSender(const int senderId, const QHash<int, QBitArray> &detectors);
 	int sendersCount() const;
 	bool isCollisionEnabled() const;
+	bool isDrawingFakesEnabled() const;
 	void updateCollisions();
 	float pointToLineDistSquared(const QPointF &point, const QLineF &line) const;
 
@@ -57,6 +59,7 @@ public:
 	QVector<QLineF> & clearCollidedRays(int senderId);
 	//cv::Mat cvtrack1(int senderId, QVector<Ray> senderRays);
 	//void cvTrack2(cv::Mat cvImage);
+	void drawRay(QHash<QPair<int, int>, int> &rectangles, QVector<QGraphicsLineItem *> &rays, const QLineF &line);
 signals:
 	void publishSizes(const QVector<QVector<QPointF> > &receivers, const QVector<QVector<QPointF> > &senders);
 
@@ -66,6 +69,7 @@ public slots:
 	void clearAllRays();
 	void clearObstacle();
 	void setCollisionEnabled(bool enable);
+	void setDrawFakesEnabled(bool enable);
 	void drawHeatMap();
 
 protected:
@@ -86,6 +90,7 @@ private:
 	QVector<Circle> mCircles;
 	QVector<QVector<QLineF> > mCollidedRays;
 	bool mCollisionEnabled;
+	bool mDrawFakes;
 	QVector<QGraphicsEllipseItem *> mCollisions;
 	QVector<QVector<QGraphicsLineItem *> > mCollidedRaysGraphics;
 	QVector<QList<QGraphicsPolygonItem *> > mTriangles;

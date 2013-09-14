@@ -77,6 +77,7 @@ void RayDisplayWindow::on_pushButton_clicked()
 	connect(this, SIGNAL(packetAvailable(QByteArray)), this, SLOT(receivePacket(QByteArray)));
 	connect(ui->drawHeatMapPushButton, SIGNAL(clicked()), mRDS, SLOT(drawHeatMap()));
 	connect(this, SIGNAL(drawHeatmap()), mRDS, SLOT(drawHeatMap()));
+	connect(ui->drawFakesCheckBox, SIGNAL(clicked(bool)), mRDS, SLOT(setDrawFakesEnabled(bool)));
 	mTimer->setInterval(1000);
 	//mTimer->start();
 }

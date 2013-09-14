@@ -10,7 +10,7 @@
 #include <QDebug>
 
 RayDisplayScene::RayDisplayScene(const Calibration cal, QObject *parent) :
-	QGraphicsScene(parent), mCollisionEnabled(false),
+	QGraphicsScene(parent), mCollisionEnabled(false), mDrawFakes(false),
 	mCalibration(cal),
 	mRW(10),
 	mRH(10)
@@ -365,6 +365,33 @@ void RayDisplayScene::lightenSender(int senderId, const int &angle)
 	updateCollisions();
 }
 
+void RayDisplayScene::drawRay(QHash<QPair<int, int>, int> &rectangles, QVector<QGraphicsLineItem *> &rays, const QLineF &line)
+{
+	QGraphicsLineItem *graphicsLine = addLine(line, QPen(QBrush(Qt::black), 1));
+	rays.append(graphicsLine);
+	const int left = qMin(line.x1(), line.x2());
+	const int right = qMax(line.x1(), line.x2());
+	const int top = qMax(line.y1(), line.y2());
+	const int bottom = qMin(line.y1(), line.y2());
+	// find bounding-box X, Y IDs
+	int xLeft = left / mRW;
+	int xRight = (right + mRW - 1) / mRW;
+	int yBottom = (top + mRH - 1) / mRH;
+	int yTop = bottom / mRH;
+	for (int x = xLeft; x < xRight; x++)
+	{
+		for (int y = yTop; y < yBottom; y++)
+		{
+			QRectF rect(x * mRW, y * mRH, mRW, mRH);
+			const bool intersects = lineRectIntersects(line, rect);
+			if (intersects)
+			{
+				rectangles[qMakePair(x, y)] += 1;
+			}
+		}
+	}
+}
+
 void RayDisplayScene::lightenSender(const int senderId, const QHash<int, QBitArray> &detectors)
 {
 	//const int size = detectors.size();
@@ -388,38 +415,43 @@ void RayDisplayScene::lightenSender(const int senderId, const QHash<int, QBitArr
 		const QBitArray cBa(sender.value(dIt.key()));
 		for (int j = 0; j < 8; j++)
 		{
+			QLineF line(senderPos, mReceivers.at(dIt.key() * 8 + j)->pos());
+			qDebug() << "got some ray" << mDrawFakes;
+			if (mDrawFakes)
+			{
+				// this conditional is not in higher-level 'if', as the follwing
+				// else-if should be executed only when mDrawFakes is false,
+				// regardless of calibration
+				if (!cBa.testBit(j))
+				{
+					qDebug() << "not calibrated";
+					continue;
+				}
+				bool dontSkip = false;
+				for (int k = 0; k < mCircles.size(); k++)
+				{
+					const Circle c = mCircles.at(k);
+					const float r = c.radius * c.radius;
+					if (pointToLineDistSquared(c.center, line) <= r)
+					{
+						dontSkip = true;
+						break;
+					}
+				}
+				if (!dontSkip)
+				{
+					continue;
+				}
+			}
 			// if ray was received correctly
 			// or
 			// it was not included in the mask
 			// skip it
-			if ((dBa.testBit(j) || !cBa.testBit(j)))
+			else if ((dBa.testBit(j) || !cBa.testBit(j)))
 			{
 				continue;
 			}
-			QLineF line(senderPos, mReceivers.at(dIt.key() * 8 + j)->pos());
-			QGraphicsLineItem *graphicsLine = addLine(line, QPen(QBrush(Qt::black), 1));
-			rays.append(graphicsLine);
-			const int left = qMin(line.x1(), line.x2());
-			const int right = qMax(line.x1(), line.x2());
-			const int top = qMax(line.y1(), line.y2());
-			const int bottom = qMin(line.y1(), line.y2());
-			// find bounding-box X, Y IDs
-			int xLeft = left / mRW;
-			int xRight = (right + mRW - 1) / mRW;
-			int yBottom = (top + mRH - 1) / mRH;
-			int yTop = bottom / mRH;
-			for (int x = xLeft; x < xRight; x++)
-			{
-				for (int y = yTop; y < yBottom; y++)
-				{
-					QRectF rect(x * mRW, y * mRH, mRW, mRH);
-					const bool intersects = lineRectIntersects(line, rect);
-					if (intersects)
-					{
-						rectangles[qMakePair(x, y)] += 1;
-					}
-				}
-			}
+			drawRay(rectangles, rays, line);
 		}
 	}
 	mRays[senderId] = rays;
@@ -605,6 +637,16 @@ void RayDisplayScene::setCollisionEnabled(bool enable)
 bool RayDisplayScene::isCollisionEnabled() const
 {
 	return mCollisionEnabled;
+}
+
+void RayDisplayScene::setDrawFakesEnabled(bool enable)
+{
+	mDrawFakes = enable;
+}
+
+bool RayDisplayScene::isDrawingFakesEnabled() const
+{
+	return mDrawFakes;
 }
 
 void RayDisplayScene::updateCollisions()

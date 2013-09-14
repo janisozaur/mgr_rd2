@@ -1,0 +1,27 @@
+{
+   QextSerialPort::setQueryMode(QextSerialPort::QueryMode)[Memcheck:Cond]
+   Memcheck:Cond
+   fun:_ZN14QextSerialPort12setQueryModeENS_9QueryModeE
+   fun:_ZN14QextSerialPortC1ENS_9QueryModeEP7QObject
+   fun:_ZN19CommunicationThreadC1EP7QObject
+   fun:_ZN16RayDisplayWindow6initCTEv
+   fun:_ZN16RayDisplayWindow21on_pushButton_clickedEv
+   fun:_ZN16RayDisplayWindow18qt_static_metacallEP7QObjectN11QMetaObject4CallEiPPv
+   fun:_ZN16RayDisplayWindow11qt_metacallEN11QMetaObject4CallEiPPv
+   fun:_ZN11QMetaObject8activateEP7QObjectiiPPv
+   fun:_ZN15QAbstractButton7clickedEb
+   obj:/home/janisozaur/Qt5.1.0/5.1.0/gcc_64/lib/libQt5Widgets.so.5.1.0
+   obj:/home/janisozaur/Qt5.1.0/5.1.0/gcc_64/lib/libQt5Widgets.so.5.1.0
+   fun:_ZN15QAbstractButton17mouseReleaseEventEP11QMouseEvent
+   fun:_ZN7QWidget5eventEP6QEvent
+   fun:_ZN19QApplicationPrivate13notify_helperEP7QObjectP6QEvent
+   fun:_ZN12QApplication6notifyEP7QObjectP6QEvent
+   fun:_ZN16QCoreApplication14notifyInternalEP7QObjectP6QEvent
+   fun:_ZN19QApplicationPrivate14sendMouseEventEP7QWidgetP11QMouseEventS1_S1_PS1_R8QPointerIS0_Eb
+   obj:/home/janisozaur/Qt5.1.0/5.1.0/gcc_64/lib/libQt5Widgets.so.5.1.0
+   obj:/home/janisozaur/Qt5.1.0/5.1.0/gcc_64/lib/libQt5Widgets.so.5.1.0
+   fun:_ZN19QApplicationPrivate13notify_helperEP7QObjectP6QEvent
+   fun:_ZN12QApplication6notifyEP7QObjectP6QEvent
+   fun:_ZN16QCoreApplication14notifyInternalEP7QObjectP6QEvent
+   fun:_ZN22QGuiApplicationPrivate17processMouseEventEPN29QWindowSystemInterfacePrivate10MouseEventE
+}

@@ -36,3 +36,6 @@ FORMS    += RayDisplayWindow.ui
 
 RESOURCES += \
     resources.qrc
+
+OTHER_FILES += \
+    rd2.supp

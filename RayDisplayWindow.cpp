@@ -277,6 +277,8 @@ void RayDisplayWindow::on_saveSceneSvgPushButton_clicked()
 {
 	QSvgGenerator generator;
 	generator.setFileName("scene.svg");
+	mRDS->setSceneRect(QRectF());
+	generator.setViewBox(QRectF(QPointF(), mRDS->sceneRect().size()));
 	generator.setSize(mRDS->sceneRect().size().toSize());
 	QPainter painter;
 	painter.begin(&generator);

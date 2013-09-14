@@ -59,7 +59,7 @@ public:
 	QVector<QLineF> & clearCollidedRays(int senderId);
 	//cv::Mat cvtrack1(int senderId, QVector<Ray> senderRays);
 	//void cvTrack2(cv::Mat cvImage);
-	void drawRay(QHash<QPair<int, int>, int> &rectangles, QVector<QGraphicsLineItem *> &rays, const QLineF &line);
+	void drawRay(QHash<QPair<int, int>, int> &rectangles, QVector<QGraphicsLineItem *> &rays, const QLineF &line, const bool draw);
 signals:
 	void publishSizes(const QVector<QVector<QPointF> > &receivers, const QVector<QVector<QPointF> > &senders);
 

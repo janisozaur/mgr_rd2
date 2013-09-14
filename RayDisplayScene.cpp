@@ -365,10 +365,13 @@ void RayDisplayScene::lightenSender(int senderId, const int &angle)
 	updateCollisions();
 }
 
-void RayDisplayScene::drawRay(QHash<QPair<int, int>, int> &rectangles, QVector<QGraphicsLineItem *> &rays, const QLineF &line)
+void RayDisplayScene::drawRay(QHash<QPair<int, int>, int> &rectangles, QVector<QGraphicsLineItem *> &rays, const QLineF &line, const bool draw)
 {
-	QGraphicsLineItem *graphicsLine = addLine(line, QPen(QBrush(Qt::black), 1));
-	rays.append(graphicsLine);
+	if (draw)
+	{
+		QGraphicsLineItem *graphicsLine = addLine(line, QPen(QBrush(Qt::black), 1));
+		rays.append(graphicsLine);
+	}
 	const int left = qMin(line.x1(), line.x2());
 	const int right = qMax(line.x1(), line.x2());
 	const int top = qMax(line.y1(), line.y2());
@@ -386,7 +389,7 @@ void RayDisplayScene::drawRay(QHash<QPair<int, int>, int> &rectangles, QVector<Q
 			const bool intersects = lineRectIntersects(line, rect);
 			if (intersects)
 			{
-				rectangles[qMakePair(x, y)] += 1;
+				rectangles[qMakePair(x, y)] += (draw ? 1 : -1);
 			}
 		}
 	}
@@ -415,18 +418,14 @@ void RayDisplayScene::lightenSender(const int senderId, const QHash<int, QBitArr
 		const QBitArray cBa(sender.value(dIt.key()));
 		for (int j = 0; j < 8; j++)
 		{
+			bool draw = true;
 			QLineF line(senderPos, mReceivers.at(dIt.key() * 8 + j)->pos());
-			qDebug() << "got some ray" << mDrawFakes;
+			if (!cBa.testBit(j))
+			{
+				continue;
+			}
 			if (mDrawFakes)
 			{
-				// this conditional is not in higher-level 'if', as the follwing
-				// else-if should be executed only when mDrawFakes is false,
-				// regardless of calibration
-				if (!cBa.testBit(j))
-				{
-					qDebug() << "not calibrated";
-					continue;
-				}
 				bool dontSkip = false;
 				for (int k = 0; k < mCircles.size(); k++)
 				{
@@ -440,18 +439,18 @@ void RayDisplayScene::lightenSender(const int senderId, const QHash<int, QBitArr
 				}
 				if (!dontSkip)
 				{
-					continue;
+					draw = false;
 				}
 			}
 			// if ray was received correctly
 			// or
 			// it was not included in the mask
 			// skip it
-			else if ((dBa.testBit(j) || !cBa.testBit(j)))
+			else if (dBa.testBit(j))
 			{
-				continue;
+				draw = false;
 			}
-			drawRay(rectangles, rays, line);
+			drawRay(rectangles, rays, line, draw);
 		}
 	}
 	mRays[senderId] = rays;
@@ -463,6 +462,7 @@ void RayDisplayScene::drawHeatMap()
 	qDeleteAll(mRectGraphics);
 	mRectGraphics.resize(0);
 	int max = 0;
+	int min = 0;
 	for (int i = 0; i < mSendersRectanglesPairs.size(); i++)
 	{
 		QHash<QPair<int, int>, int>::const_iterator it = mSendersRectanglesPairs.at(i).constBegin();
@@ -474,13 +474,18 @@ void RayDisplayScene::drawHeatMap()
 			{
 				max = allRectangles.value(it.key());
 			}
+			else if (allRectangles.value(it.key()) < min)
+			{
+				min = allRectangles.value(it.key());
+			}
 		}
 	}
 	QHash<QPair<int, int>, int>::const_iterator it = allRectangles.constBegin();
 	const QHash<QPair<int, int>, int>::const_iterator end = allRectangles.constEnd();
+	const qreal range = qreal(max - min);
 	for (; it != end; it++)
 	{
-		const int v = 255 - (qreal(it.value()) / qreal(max)) * 255;
+		const int v = 255 - (qreal(it.value() - min) / range) * 255;
 		QColor c(QColor::fromHsl(v, 255, 128));
 		QGraphicsRectItem *r;
 		r = addRect(QRectF(it.key().first * mRW, it.key().second * mRH, mRW, mRH), QPen(QBrush(c), 1), QBrush(c));

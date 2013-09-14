@@ -37,6 +37,8 @@ private slots:
 	void on_saveSceneSvgPushButton_clicked();
 	void on_initPushButton_clicked();
 
+	void on_refitPushButton_clicked();
+
 signals:
 	void serialWrite(QString command);
 	void packetAvailable(QByteArray packet);

@@ -180,6 +180,13 @@
            </property>
           </widget>
          </item>
+         <item>
+          <widget class="QPushButton" name="refitPushButton">
+           <property name="text">
+            <string>refit</string>
+           </property>
+          </widget>
+         </item>
         </layout>
        </widget>
       </item>

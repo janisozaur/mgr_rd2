@@ -616,18 +616,58 @@ void RayDisplayScene::clearAllRays()
 	}
 }
 
+void RayDisplayScene::deleteCircle(QGraphicsEllipseItem *item)
+{
+	int idx;
+	if ((idx = mCircles.indexOf(item)) != -1)
+	{
+		delete item;
+		mCircles.remove(idx);
+	}
+}
+
 void RayDisplayScene::deleteSelected()
 {
 	const QList<QGraphicsItem *> items = this->selectedItems();
 	for (int i = 0; i < items.size(); i++)
 	{
-		int idx;
-		if ((idx = mCircles.indexOf(dynamic_cast<QGraphicsEllipseItem *>(items.at(i)))) != -1)
-		{
-			delete items.at(i);
-			mCircles.remove(idx);
-		}
+		QGraphicsEllipseItem *item = dynamic_cast<QGraphicsEllipseItem *>(items.at(i));
+		deleteCircle(item);
 	}
+}
+
+void RayDisplayScene::deleteAll()
+{
+	qDeleteAll(mCircles);
+	mCircles.resize(0);
+}
+
+void RayDisplayScene::importCircles(QVector<Circle> circles)
+{
+	for (int i = 0; i < circles.size(); i++)
+	{
+		addCircle(circles.at(i));
+	}
+}
+
+QVector<Circle> RayDisplayScene::exportCircles() const
+{
+	QVector<Circle> circles;
+	for (int i = 0; i < mCircles.size(); i++)
+	{
+		circles << Circle{mCircles.at(i)->scenePos(), mCircles.at(i)->data(0).toFloat()};
+	}
+	return circles;
+}
+
+void RayDisplayScene::addCircle(const Circle &c)
+{
+	QGraphicsEllipseItem *gei = new QGraphicsEllipseItem(QRectF(QPointF(-c.radius, -c.radius), QPointF(c.radius, c.radius)));
+	gei->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
+	this->addItem(gei);
+	gei->setData(0, c.radius);
+	gei->setPos(c.center);
+	mCircles << gei;
 }
 
 void RayDisplayScene::mousePressEvent(QGraphicsSceneMouseEvent *event)
@@ -635,13 +675,8 @@ void RayDisplayScene::mousePressEvent(QGraphicsSceneMouseEvent *event)
 	QGraphicsScene::mousePressEvent(event);
 	if (event->buttons().testFlag(Qt::RightButton)) {
 		qDebug() << "right" << event->pos() << event->scenePos();
-		QPointF center;
-		QGraphicsEllipseItem *gei = new QGraphicsEllipseItem(QRectF(QPointF(center.x() - mCircleSize / 2, center.y() - mCircleSize / 2), QPointF(center.x() + mCircleSize / 2, center.y() + mCircleSize / 2)));
-		gei->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
-		this->addItem(gei);
-		gei->setData(0, mCircleSize);
-		gei->setPos(event->scenePos());
-		mCircles << gei;
+		Circle c = {event->scenePos(), float(mCircleSize)};
+		addCircle(c);
 
 		//mObstacle << event->scenePos();
 		//mGraphicsObstacle->setPolygon(mObstacle);

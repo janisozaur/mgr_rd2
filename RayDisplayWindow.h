@@ -41,6 +41,8 @@ private slots:
 
 	void on_deleteCirclePushButton_clicked();
 
+	void on_deleteAllPushButton_clicked();
+
 signals:
 	void serialWrite(QString command);
 	void packetAvailable(QByteArray packet);

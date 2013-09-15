@@ -62,8 +62,10 @@ void RayDisplayWindow::initCT()
 
 void RayDisplayWindow::on_initPushButton_clicked()
 {
+	QVector<Circle> circles;
 	if (mRDS != nullptr)
 	{
+		circles = mRDS->exportCircles();
 		disconnect(this, SIGNAL(drawHeatmap()), mRDS, SLOT(drawHeatMap()));
 		disconnect(ui->toggleRayVisiblityPushButton, SIGNAL(clicked()), mRDS, SLOT(toggleRayVisibility()));
 		disconnect(ui->circleSizeSpinBox, SIGNAL(valueChanged(int)), mRDS, SLOT(setCircleSize(int)));
@@ -93,6 +95,7 @@ void RayDisplayWindow::on_initPushButton_clicked()
 	mRDS->setDrawFakesEnabled(ui->drawFakesCheckBox->isChecked());
 	mRDS->setCircleSize(ui->circleSizeSpinBox->value());
 	mRDS->useNewHeatmap(ui->heatmapTypeCheckBox->isChecked());
+	mRDS->importCircles(circles);
 	mTimer->setInterval(1000);
 	//mTimer->start();
 }
@@ -281,6 +284,10 @@ void RayDisplayWindow::error(QString errormsg)
 
 void RayDisplayWindow::on_saveSceneSvgPushButton_clicked()
 {
+	if (mRDS == nullptr)
+	{
+		return;
+	}
 	QSvgGenerator generator;
 	generator.setFileName("scene.svg");
 	mRDS->setSceneRect(QRectF());
@@ -301,5 +308,18 @@ void RayDisplayWindow::on_refitPushButton_clicked()
 
 void RayDisplayWindow::on_deleteCirclePushButton_clicked()
 {
+	if (mRDS == nullptr)
+	{
+		return;
+	}
 	mRDS->deleteSelected();
+}
+
+void RayDisplayWindow::on_deleteAllPushButton_clicked()
+{
+	if (mRDS == nullptr)
+	{
+		return;
+	}
+	mRDS->deleteAll();
 }

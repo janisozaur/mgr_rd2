@@ -35,12 +35,6 @@ class RayDisplayScene : public QGraphicsScene
 		bool isCornerRay;
 	};
 
-	struct Circle
-	{
-		QPointF center;
-		float radius;
-	};
-
 public:
 	explicit RayDisplayScene(const Calibration cal, const int boxSize, QObject *parent = 0);
 	virtual ~RayDisplayScene();
@@ -60,6 +54,9 @@ public:
 	//cv::Mat cvtrack1(int senderId, QVector<Ray> senderRays);
 	//void cvTrack2(cv::Mat cvImage);
 	void drawRay(QHash<QPair<int, int>, int> &rectangles, QVector<QGraphicsLineItem *> &rays, const QLineF &line, const bool draw);
+	QVector<Circle> exportCircles() const;
+	void deleteCircle(QGraphicsEllipseItem *item);
+
 signals:
 	void publishSizes(const QVector<QVector<QPointF> > &receivers, const QVector<QVector<QPointF> > &senders);
 
@@ -74,7 +71,9 @@ public slots:
 	void toggleRayVisibility();
 	void setCircleSize(int size);
 	void deleteSelected();
+	void deleteAll();
 	void useNewHeatmap(bool use);
+	void importCircles(QVector<Circle> circles);
 
 protected:
 	void mousePressEvent(QGraphicsSceneMouseEvent *);
@@ -85,6 +84,7 @@ private:
 	bool isCornerRay(const QVector<Ray> &rays, const int idx) const;
 	bool isFinishingRay(const QVector<Ray> &rays, const int idx) const;
 	bool lineRectIntersects(const QLineF &line, const QRectF &rect) const;
+	void addCircle(const Circle &c);
 	QVector<Sender> mSenders;
 	QVector<QGraphicsEllipseItem *> mReceivers;
 	QVector<QVector<QGraphicsEllipseItem *> > mSidedReceivers;

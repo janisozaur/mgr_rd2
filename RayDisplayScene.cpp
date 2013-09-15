@@ -287,6 +287,26 @@ void RayDisplayScene::toggleRayVisibility()
 	cv::imshow(QString(QString("blobs")).toStdString(), blobsImg);
 }*/
 
+void RayDisplayScene::useNewHeatmap(bool use)
+{
+	mUseNewHeatmap = use;
+	if (!use)
+	{
+		for (int i = 0; i < mSendersRectanglesPairs.size(); i++)
+		{
+			QHash<QPair<int, int>, int>::iterator it = mSendersRectanglesPairs[i].begin();
+			const QHash<QPair<int, int>, int>::iterator end = mSendersRectanglesPairs[i].end();
+			for (; it != end; it++)
+			{
+				if (it.value() < 0)
+				{
+					it.value() = 0;
+				}
+			}
+		}
+	}
+}
+
 void RayDisplayScene::lightenSender(int senderId, const int &angle)
 {
 	clearRayNumbers();
@@ -404,7 +424,7 @@ void RayDisplayScene::drawRay(QHash<QPair<int, int>, int> &rectangles, QVector<Q
 			const bool intersects = lineRectIntersects(line, rect);
 			if (intersects)
 			{
-				rectangles[qMakePair(x, y)] += (draw ? 1 : -1);
+				rectangles[qMakePair(x, y)] += (draw ? 1 : (mUseNewHeatmap ? -1 : 0));
 			}
 		}
 	}
@@ -485,13 +505,14 @@ void RayDisplayScene::drawHeatMap()
 		for (; it != end; it++)
 		{
 			allRectangles[it.key()] += it.value();
-			if (allRectangles.value(it.key()) > max)
+			const int v = allRectangles.value(it.key());
+			if (v > max)
 			{
-				max = allRectangles.value(it.key());
+				max = v;
 			}
-			else if (allRectangles.value(it.key()) < min)
+			else if (v < min)
 			{
-				min = allRectangles.value(it.key());
+				min = v;
 			}
 		}
 	}
@@ -500,7 +521,11 @@ void RayDisplayScene::drawHeatMap()
 	const qreal range = qreal(max - min);
 	for (; it != end; it++)
 	{
-		const int h = 240 - (qreal(it.value() - min) / range) * 240;
+		if (!mUseNewHeatmap && (it.value() == 0))
+		{
+			continue;
+		}
+		const int h = 260 - (qreal(it.value() - min) / range) * 260;
 		QColor c(QColor::fromHsl(h, 255, 128));
 		QGraphicsRectItem *r;
 		r = addRect(QRectF(it.key().first * mRW, it.key().second * mRH, mRW, mRH), QPen(QBrush(c), 1), QBrush(c));

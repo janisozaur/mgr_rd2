@@ -67,6 +67,7 @@ void RayDisplayWindow::on_initPushButton_clicked()
 		disconnect(this, SIGNAL(drawHeatmap()), mRDS, SLOT(drawHeatMap()));
 		disconnect(ui->toggleRayVisiblityPushButton, SIGNAL(clicked()), mRDS, SLOT(toggleRayVisibility()));
 		disconnect(ui->circleSizeSpinBox, SIGNAL(valueChanged(int)), mRDS, SLOT(setCircleSize(int)));
+		disconnect(ui->heatmapTypeCheckBox, SIGNAL(clicked(bool)), mRDS, SLOT(useNewHeatmap(bool)));
 	}
 	delete mRDS;
 	delete mTimer;
@@ -88,8 +89,10 @@ void RayDisplayWindow::on_initPushButton_clicked()
 	connect(ui->drawFakesCheckBox, SIGNAL(clicked(bool)), mRDS, SLOT(setDrawFakesEnabled(bool)));
 	connect(ui->toggleRayVisiblityPushButton, SIGNAL(clicked()), mRDS, SLOT(toggleRayVisibility()));
 	connect(ui->circleSizeSpinBox, SIGNAL(valueChanged(int)), mRDS, SLOT(setCircleSize(int)));
+	connect(ui->heatmapTypeCheckBox, SIGNAL(clicked(bool)), mRDS, SLOT(useNewHeatmap(bool)));
 	mRDS->setDrawFakesEnabled(ui->drawFakesCheckBox->isChecked());
 	mRDS->setCircleSize(ui->circleSizeSpinBox->value());
+	mRDS->useNewHeatmap(ui->heatmapTypeCheckBox->isChecked());
 	mTimer->setInterval(1000);
 	//mTimer->start();
 }

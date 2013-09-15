@@ -74,6 +74,7 @@ public slots:
 	void toggleRayVisibility();
 	void setCircleSize(int size);
 	void deleteSelected();
+	void useNewHeatmap(bool use);
 
 protected:
 	void mousePressEvent(QGraphicsSceneMouseEvent *);
@@ -106,6 +107,7 @@ private:
 	// rectangle width, height
 	const int mRW, mRH;
 	int mCircleSize;
+	bool mUseNewHeatmap;
 //	QVector<QList<QVector<cv::Point2i> > > mCvPolygons;
 //	QVector<cv::Mat> mMats;
 //	Tracker mTracker;

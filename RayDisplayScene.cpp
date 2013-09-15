@@ -324,7 +324,9 @@ void RayDisplayScene::lightenSender(int senderId, const int &angle)
 			}*/
 			const int size = mCircles.size();
 			for (int j = 0; j < size; j++) {
-				if (pointToLineDistSquared(mCircles.at(j).center, senderRays.at(i).line) <= mCircles.at(j).radius * mCircles.at(j).radius) {
+				float r = mCircles.at(j)->data(0).toInt();
+				float rSq = r * r;
+				if (pointToLineDistSquared(mCircles.at(j)->scenePos(), senderRays.at(i).line) <= rSq) {
 					senderRays[i].visible = false;
 					break;
 				}
@@ -442,9 +444,9 @@ void RayDisplayScene::lightenSender(const int senderId, const QHash<int, QBitArr
 				bool dontSkip = false;
 				for (int k = 0; k < mCircles.size(); k++)
 				{
-					const Circle c = mCircles.at(k);
-					const float r = c.radius * c.radius;
-					if (pointToLineDistSquared(c.center, line) <= r)
+					const float r = mCircles.at(k)->data(0).toInt();
+					const float rSq = r * r;
+					if (pointToLineDistSquared(mCircles.at(k)->scenePos(), line) <= rSq)
 					{
 						dontSkip = true;
 						break;
@@ -589,18 +591,32 @@ void RayDisplayScene::clearAllRays()
 	}
 }
 
+void RayDisplayScene::deleteSelected()
+{
+	const QList<QGraphicsItem *> items = this->selectedItems();
+	for (int i = 0; i < items.size(); i++)
+	{
+		int idx;
+		if ((idx = mCircles.indexOf(dynamic_cast<QGraphicsEllipseItem *>(items.at(i)))) != -1)
+		{
+			delete items.at(i);
+			mCircles.remove(idx);
+		}
+	}
+}
+
 void RayDisplayScene::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
-	if (event->buttons().testFlag(Qt::LeftButton)) {
-		qDebug() << "left" << event->pos() << event->scenePos();
-	}
+	QGraphicsScene::mousePressEvent(event);
 	if (event->buttons().testFlag(Qt::RightButton)) {
 		qDebug() << "right" << event->pos() << event->scenePos();
-		Circle c {event->scenePos(), 5*4};
-		mCircles << c;
-		QPointF center = c.center;
-		QGraphicsEllipseItem *gei = new QGraphicsEllipseItem(QRectF(QPointF(center.x() - c.radius / 2, center.y() - c.radius / 2), QPointF(center.x() + c.radius / 2, center.y() + c.radius / 2)));
+		QPointF center;
+		QGraphicsEllipseItem *gei = new QGraphicsEllipseItem(QRectF(QPointF(center.x() - mCircleSize / 2, center.y() - mCircleSize / 2), QPointF(center.x() + mCircleSize / 2, center.y() + mCircleSize / 2)));
+		gei->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
 		this->addItem(gei);
+		gei->setData(0, mCircleSize);
+		gei->setPos(event->scenePos());
+		mCircles << gei;
 
 		//mObstacle << event->scenePos();
 		//mGraphicsObstacle->setPolygon(mObstacle);
@@ -609,7 +625,12 @@ void RayDisplayScene::mousePressEvent(QGraphicsSceneMouseEvent *event)
 
 void RayDisplayScene::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
-	for (int i = 0; i < mRays.size(); i++)
+	QGraphicsScene::mouseMoveEvent(event);
+	if (!this->selectedItems().isEmpty())
+	{
+		return;
+	}
+	/*for (int i = 0; i < mRays.size(); i++)
 	{
 		for (int j = 0; j < mRays.at(i).size(); j++)
 		{
@@ -620,7 +641,7 @@ void RayDisplayScene::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 				mRays[i][j]->setVisible(visible);
 			}
 		}
-	}
+	}*/
 }
 
 float RayDisplayScene::pointToLineDistSquared(const QPointF &point, const QLineF &line) const
@@ -665,6 +686,11 @@ void RayDisplayScene::setDrawFakesEnabled(bool enable)
 bool RayDisplayScene::isDrawingFakesEnabled() const
 {
 	return mDrawFakes;
+}
+
+void RayDisplayScene::setCircleSize(int size)
+{
+	mCircleSize = size;
 }
 
 void RayDisplayScene::updateCollisions()

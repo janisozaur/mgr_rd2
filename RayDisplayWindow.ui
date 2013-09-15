@@ -165,25 +165,49 @@
         <property name="title">
          <string>Scene options</string>
         </property>
-        <layout class="QVBoxLayout" name="verticalLayout">
-         <item>
+        <layout class="QFormLayout" name="formLayout_3">
+         <item row="0" column="0" colspan="2">
           <widget class="QPushButton" name="toggleRayVisiblityPushButton">
            <property name="text">
             <string>toggle ray visibility</string>
            </property>
           </widget>
          </item>
-         <item>
+         <item row="2" column="0" colspan="2">
+          <widget class="QPushButton" name="refitPushButton">
+           <property name="text">
+            <string>refit</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0" colspan="2">
           <widget class="QPushButton" name="saveSceneSvgPushButton">
            <property name="text">
             <string>save scene as svg</string>
            </property>
           </widget>
          </item>
-         <item>
-          <widget class="QPushButton" name="refitPushButton">
+         <item row="3" column="0">
+          <widget class="QLabel" name="label_5">
            <property name="text">
-            <string>refit</string>
+            <string>circle size</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="1">
+          <widget class="QSpinBox" name="circleSizeSpinBox">
+           <property name="minimum">
+            <number>2</number>
+           </property>
+           <property name="value">
+            <number>10</number>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="0" colspan="2">
+          <widget class="QPushButton" name="deleteCirclePushButton">
+           <property name="text">
+            <string>delete selected</string>
            </property>
           </widget>
          </item>

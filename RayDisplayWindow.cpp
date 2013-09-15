@@ -66,6 +66,7 @@ void RayDisplayWindow::on_initPushButton_clicked()
 	{
 		disconnect(this, SIGNAL(drawHeatmap()), mRDS, SLOT(drawHeatMap()));
 		disconnect(ui->toggleRayVisiblityPushButton, SIGNAL(clicked()), mRDS, SLOT(toggleRayVisibility()));
+		disconnect(ui->circleSizeSpinBox, SIGNAL(valueChanged(int)), mRDS, SLOT(setCircleSize(int)));
 	}
 	delete mRDS;
 	delete mTimer;
@@ -86,7 +87,9 @@ void RayDisplayWindow::on_initPushButton_clicked()
 	connect(this, SIGNAL(drawHeatmap()), mRDS, SLOT(drawHeatMap()));
 	connect(ui->drawFakesCheckBox, SIGNAL(clicked(bool)), mRDS, SLOT(setDrawFakesEnabled(bool)));
 	connect(ui->toggleRayVisiblityPushButton, SIGNAL(clicked()), mRDS, SLOT(toggleRayVisibility()));
+	connect(ui->circleSizeSpinBox, SIGNAL(valueChanged(int)), mRDS, SLOT(setCircleSize(int)));
 	mRDS->setDrawFakesEnabled(ui->drawFakesCheckBox->isChecked());
+	mRDS->setCircleSize(ui->circleSizeSpinBox->value());
 	mTimer->setInterval(1000);
 	//mTimer->start();
 }
@@ -289,5 +292,11 @@ void RayDisplayWindow::on_saveSceneSvgPushButton_clicked()
 
 void RayDisplayWindow::on_refitPushButton_clicked()
 {
+	mRDS->setSceneRect(QRectF());
 	ui->graphicsView->fitInView(mRDS->sceneRect(), Qt::KeepAspectRatio);
+}
+
+void RayDisplayWindow::on_deleteCirclePushButton_clicked()
+{
+	mRDS->deleteSelected();
 }

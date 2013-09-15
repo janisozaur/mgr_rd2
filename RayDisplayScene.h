@@ -72,6 +72,8 @@ public slots:
 	void setDrawFakesEnabled(bool enable);
 	void drawHeatMap();
 	void toggleRayVisibility();
+	void setCircleSize(int size);
+	void deleteSelected();
 
 protected:
 	void mousePressEvent(QGraphicsSceneMouseEvent *);
@@ -88,7 +90,7 @@ private:
 	QVector<QVector<QGraphicsLineItem *>> mRays;
 	QPolygonF mObstacle;
 	QGraphicsPolygonItem *mGraphicsObstacle;
-	QVector<Circle> mCircles;
+	QVector<QGraphicsEllipseItem *> mCircles;
 	QVector<QVector<QLineF> > mCollidedRays;
 	bool mCollisionEnabled;
 	bool mDrawFakes;
@@ -103,6 +105,7 @@ private:
 	QVector<QGraphicsRectItem *> mRectGraphics;
 	// rectangle width, height
 	const int mRW, mRH;
+	int mCircleSize;
 //	QVector<QList<QVector<cv::Point2i> > > mCvPolygons;
 //	QVector<cv::Mat> mMats;
 //	Tracker mTracker;

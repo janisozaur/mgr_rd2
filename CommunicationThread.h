@@ -37,6 +37,7 @@ private:
     void emitPackets(const QByteArray fresh);
     void readSingle(const int sender);
     void readAll(const int sender);
+    void readNonLit();
     ModuleReadType getModuleID();
     QextSerialPort *mSerial;
     QByteArray mBuffer;

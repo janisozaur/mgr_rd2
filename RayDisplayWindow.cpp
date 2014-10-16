@@ -13,6 +13,7 @@
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QSvgGenerator>
+#include <QCursor>
 
 #include <QDebug>
 
@@ -70,6 +71,10 @@ void RayDisplayWindow::on_initPushButton_clicked()
 		disconnect(ui->toggleRayVisiblityPushButton, SIGNAL(clicked()), mRDS, SLOT(toggleRayVisibility()));
 		disconnect(ui->circleSizeSpinBox, SIGNAL(valueChanged(int)), mRDS, SLOT(setCircleSize(int)));
 		disconnect(ui->heatmapTypeCheckBox, SIGNAL(clicked(bool)), mRDS, SLOT(useNewHeatmap(bool)));
+	}
+	if (circles.isEmpty())
+	{
+		circles << Circle{QPointF(150, 138), 10};
 	}
 	delete mRDS;
 	delete mTimer;
@@ -269,6 +274,13 @@ void RayDisplayWindow::receivePacket(QByteArray packet)
 				//qDebug() << "################## here be dragons";
 			}
 		}
+		break;
+	case 'c':
+		{
+			qDebug() << "entered c";
+			Q_ASSERT(packet.size() == 22);
+		}
+		break;
 	}
 	if (ui->refreshHeatmapCheckBox->isChecked())
 	{
@@ -322,4 +334,5 @@ void RayDisplayWindow::on_deleteAllPushButton_clicked()
 		return;
 	}
 	mRDS->deleteAll();
+	QCursor::setPos(QCursor::pos() + QPoint(5, 5));
 }

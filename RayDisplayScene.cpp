@@ -491,12 +491,63 @@ void RayDisplayScene::lightenSender(const int senderId, const QHash<int, QBitArr
 	mRays[senderId] = rays;
 }
 
+/*void RayDisplayScene::drawNonLit(const QHash<int, QBitArray> &detectors)
+{
+	QHash<int, QBitArray>::const_iterator dIt = detectors.constBegin();
+	const QHash<int, QBitArray>::const_iterator dEnd = detectors.constEnd();
+	QHash<QPair<int, int>, int> &rectangles = mSendersRectanglesPairs[senderId];
+	rectangles.clear();
+	for (; dIt != dEnd; dIt++)
+	{
+		const QBitArray dBa(*dIt);
+		// sender calibration should not really use iterator, just look-up by key
+		const QBitArray cBa(sender.value(dIt.key()));
+		for (int j = 0; j < 8; j++)
+		{
+			bool draw = true;
+			QLineF line(senderPos, mReceivers.at(dIt.key() * 8 + j)->pos());
+			if (!cBa.testBit(j))
+			{
+				continue;
+			}
+			if (mDrawFakes)
+			{
+				bool dontSkip = false;
+				for (int k = 0; k < mCircles.size(); k++)
+				{
+					const float r = mCircles.at(k)->data(0).toInt();
+					const float rSq = r * r;
+					if (pointToLineDistSquared(mCircles.at(k)->scenePos(), line) <= rSq)
+					{
+						dontSkip = true;
+						break;
+					}
+				}
+				if (!dontSkip)
+				{
+					draw = false;
+				}
+			}
+			// if ray was received correctly
+			// or
+			// it was not included in the mask
+			// skip it
+			else if (dBa.testBit(j))
+			{
+				draw = false;
+			}
+			drawRay(rectangles, rays, line, draw);
+		}
+	}
+	mRays[senderId] = rays;
+}*/
+
 void RayDisplayScene::drawHeatMap()
 {
 	QHash<QPair<int, int>, int> allRectangles;
 	qDeleteAll(mRectGraphics);
 	mRectGraphics.resize(0);
-	int max = 0;
+	int max = -160; // 20 modules * 8 receivers
 	int min = 0;
 	for (int i = 0; i < mSendersRectanglesPairs.size(); i++)
 	{
@@ -528,11 +579,11 @@ void RayDisplayScene::drawHeatMap()
 		const int h = 260 - (qreal(it.value() - min) / range) * 260;
 		QColor c(QColor::fromHsl(h, 255, 128));
 		QGraphicsRectItem *r;
-		r = addRect(QRectF(it.key().first * mRW, it.key().second * mRH, mRW, mRH), QPen(QBrush(c), 1), QBrush(c));
+		r = addRect(QRectF(it.key().first * mRW, it.key().second * mRH, mRW, mRH), QPen(QBrush(c), 0), QBrush(c));
 		r->setZValue(-1);
 		mRectGraphics << r;
 	}
-	qDebug() << "heat map drawn!";
+	qDebug() << "heat map drawn! min:" << min << ", max:" << max;
 }
 
 bool RayDisplayScene::lineRectIntersects(const QLineF &line, const QRectF &rect) const

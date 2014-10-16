@@ -42,6 +42,7 @@ public:
 	void lightenSender(int senderId, const int &angle);
 	void lightenSender(const int senderId, const QVector<QBitArray> &detectors, const QVector<QBitArray> &calibration, const bool clear = true);
 	void lightenSender(const int senderId, const QHash<int, QBitArray> &detectors);
+	//void drawNonLit(const QHash<int, QBitArray> &detectors);
 	int sendersCount() const;
 	bool isCollisionEnabled() const;
 	bool isDrawingFakesEnabled() const;

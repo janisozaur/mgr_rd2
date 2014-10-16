@@ -6,7 +6,8 @@
 enum ReadType
 {
     ReadSingle,
-    ReadAll
+    ReadAll,
+    ReadNonLit
 };
 
 struct Circle

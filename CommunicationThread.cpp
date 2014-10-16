@@ -132,6 +132,30 @@ void CommunicationThread::readAll(const int sender)
 	emitPackets(data);
 }
 
+void CommunicationThread::readNonLit()
+{
+	/*QString receivers;
+	receivers.reserve(20);
+	for (int i = 0; i < 20; i++)
+	{
+		receivers += QChar('a' + i);
+	}
+	// works for mirrored mode, might not work in non-mirror
+	const QString senderId(QChar('{'));
+	const QString command(readAllFormat.arg(senderId, receivers));
+	qDebug() << "command:" << command;
+	const QByteArray actualData(command.toLocal8Bit());
+	const int replySize = ((2 + receiversCal.size() + 2) / 3) * 4 + 1;
+	qDebug() << "actual data:" << actualData << ", in hex:" << actualData.toHex();
+	qDebug() << "expecting" << replySize << "bytes in response";
+	mSerial->write(actualData);
+	mSerial->flush();
+	QByteArray data = readBytes(replySize);
+	data[0] = 'c';
+	qDebug() << "response size:" << data.size() << ", it is: " << data << ", in hex:" << data.toHex();
+	emitPackets(data);*/
+}
+
 void CommunicationThread::setPortName(QString name)
 {
 	mPortName = name;
@@ -168,6 +192,8 @@ void CommunicationThread::run()
 				break;
 			case ReadAll:
 				readAll(sender);
+				break;
+			case ReadNonLit:
 				break;
 		}
 
